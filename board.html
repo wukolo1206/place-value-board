@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>定位板：記數與讀數</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:"Microsoft JhengHei","PingFang TC",sans-serif;
+     background:#f4f7fb;color:#1f2937;-webkit-text-size-adjust:100%}
+.wrap{max-width:1180px;margin:0 auto;padding:10px 12px 40px}
+.top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.back{text-decoration:none;color:#475569;font-size:15px;padding:6px 10px;border-radius:8px}
+.back:active{background:#e2e8f0}
+h1{font-size:20px;margin:0;flex:1}
+.tabs{display:flex;gap:8px;margin-bottom:12px}
+.tab{flex:1;min-height:52px;font-size:19px;font-weight:700;border:2px solid #cbd5e1;
+     background:#fff;color:#64748b;border-radius:12px;cursor:pointer}
+.tab.on{background:#1d4ed8;border-color:#1d4ed8;color:#fff}
+.panel{display:none}
+.panel.on{display:block}
+
+/* ── 定位板 ── */
+.boardwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+table.board{border-collapse:separate;border-spacing:0;margin:0 auto;background:#fff;
+            border:3px solid #1e3a8a;border-radius:10px;overflow:hidden}
+table.board th,table.board td{border-right:2px solid #bfdbfe;text-align:center}
+table.board th:last-child,table.board td:last-child{border-right:none}
+table.board th{background:#dbeafe;color:#1e3a8a;font-size:15px;line-height:1.15;
+               padding:6px 2px;font-weight:700;min-width:58px}
+table.board th small{display:block;font-size:13px;font-weight:400}
+td.cell{font-size:38px;font-weight:700;height:76px;cursor:pointer;
+        transition:background .12s;color:#0f172a}
+td.cell.zero{color:#cbd5e1}
+td.cell.hit{background:#fef08a}
+td.cell.drop{background:#bbf7d0}
+td.cell.bad{background:#fecaca}
+.grp{border-right:4px solid #1e3a8a !important}
+
+/* ── 鈔票區 ── */
+.bills{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+.bill{min-width:104px;min-height:56px;border-radius:10px;border:none;color:#fff;
+      font-size:18px;font-weight:700;cursor:pointer;touch-action:none;user-select:none}
+.bill:active{transform:scale(.95)}
+.b0{background:#14b8a6}.b1{background:#0ea5e9}.b2{background:#8b5cf6}.b3{background:#f59e0b}.b4{background:#ef4444}
+.ghost{position:fixed;pointer-events:none;z-index:99;opacity:.9;
+       padding:10px 16px;border-radius:10px;color:#fff;font-weight:700;font-size:18px}
+
+/* ── 讀數輸出 ── */
+.out{background:#fff;border-radius:12px;padding:14px 16px;margin-top:14px;
+     border:2px solid #e2e8f0;text-align:center}
+.num{font-size:34px;font-weight:700;letter-spacing:2px;color:#0f172a;word-break:break-all}
+.rd{font-size:26px;margin-top:8px;color:#1e3a8a;font-weight:700}
+.rd .skip{color:#cbd5e1;font-weight:400}
+.rd .keep{color:#dc2626}
+.digits{font-size:17px;color:#64748b;margin-top:6px}
+.ctrl{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.btn{min-height:48px;padding:0 18px;font-size:17px;font-weight:700;border-radius:10px;
+     border:2px solid #cbd5e1;background:#fff;color:#334155;cursor:pointer}
+.btn.on{background:#1d4ed8;border-color:#1d4ed8;color:#fff}
+.btn:active{transform:scale(.97)}
+.hint{font-size:15px;color:#64748b;text-align:center;margin-top:10px;line-height:1.6}
+
+/* ── 練習 ── */
+.stagebar{display:flex;gap:6px;margin-bottom:12px}
+.st{flex:1;min-height:46px;font-size:16px;font-weight:700;border-radius:10px;
+    border:2px solid #cbd5e1;background:#fff;color:#64748b;cursor:pointer}
+.st.on{background:#059669;border-color:#059669;color:#fff}
+.st.done{border-color:#059669;color:#059669}
+.q{background:#fff;border-radius:12px;padding:18px;border:2px solid #e2e8f0}
+.qtitle{font-size:17px;color:#475569;margin-bottom:10px}
+.qbody{font-size:30px;font-weight:700;text-align:center;margin:14px 0;color:#0f172a;
+       word-break:break-all;line-height:1.4}
+.ans{width:100%;max-width:420px;min-height:56px;font-size:26px;text-align:center;
+     border:2px solid #cbd5e1;border-radius:10px;display:block;margin:0 auto;
+     font-family:inherit;font-weight:700}
+.ans:focus{outline:none;border-color:#1d4ed8}
+.fb{text-align:center;font-size:19px;font-weight:700;margin-top:12px;min-height:30px}
+.fb.ok{color:#059669}.fb.no{color:#dc2626}
+.prog{text-align:center;font-size:15px;color:#64748b;margin-top:10px}
+@media(min-width:900px){
+  h1{font-size:24px}
+  td.cell{font-size:52px;height:96px}
+  table.board th{font-size:17px;min-width:74px}
+  .num{font-size:44px}.rd{font-size:32px}
+}
+
+/* ── 挑戰（學力檢測考古題）── */
+.chsrc{font-size:15px;color:#94a3b8;margin-bottom:6px}
+.chnote{font-size:14px;color:#b45309;background:#fffbeb;border:1px solid #fde68a;
+        border-radius:8px;padding:8px 10px;margin:8px 0;line-height:1.6}
+.chopt{display:block;width:100%;text-align:left;min-height:56px;margin:8px 0;padding:12px 16px;
+       font-size:19px;font-weight:700;border:2px solid #cbd5e1;background:#fff;color:#334155;
+       border-radius:10px;cursor:pointer;font-family:inherit;line-height:1.5}
+.chopt:active{transform:scale(.99)}
+.chopt.ok{background:#dcfce7;border-color:#059669;color:#065f46}
+.chopt.no{background:#fee2e2;border-color:#dc2626;color:#991b1b}
+.chwhy{font-size:16px;color:#334155;background:#f1f5f9;border-radius:8px;
+       padding:10px 12px;margin-top:10px;line-height:1.7;display:none}
+
+/* ── 具體端：看得見的鈔票堆（橫軸左半邊）── */
+.stack{background:#fff;border:2px solid #e2e8f0;border-radius:12px;
+       padding:10px 12px;margin-top:12px}
+.stackhd{font-size:15px;color:#64748b;margin-bottom:6px}
+.stackrow{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;min-height:56px}
+.pile{display:flex;flex-direction:column;align-items:center;gap:2px}
+.pile .lab{font-size:13px;color:#64748b;margin-top:3px}
+.notes{position:relative;height:44px;width:56px}
+.note1{position:absolute;left:0;width:52px;height:20px;border-radius:3px;
+       border:1px solid rgba(0,0,0,.18);font-size:10px;color:#fff;
+       display:flex;align-items:center;justify-content:center;font-weight:700;
+       transition:transform .3s,opacity .3s}
+.bundleov{position:fixed;z-index:80;pointer-events:none;width:56px;height:60px}
+.bundleov .note1{position:absolute;left:0}
+.bundle{outline:3px solid #dc2626;outline-offset:2px;border-radius:5px;
+        animation:tie .55s ease}
+@keyframes tie{0%{transform:scale(1)}45%{transform:scale(.82)}100%{transform:scale(1)}}
+.flyleft{animation:fly .55s ease forwards}
+@keyframes fly{to{transform:translateX(-72px) scale(.72);opacity:.25}}
+/* 觸控目標一律 ≥ 48px（教師大屏與學生 iPad）*/
+.back{min-height:48px;display:inline-flex;align-items:center}
+.st{min-height:48px}
+</style>
+</head>
+<body>
+<script src="place-value-core.js"></script>
+<div class="wrap">
+  <div class="top">
+    <a class="back" href="index.html">← 返回</a>
+    <h1>定位板：記數與讀數</h1>
+  </div>
+  <div class="tabs">
+    <button class="tab on" id="tabEx" onclick="setMode('explore')">🔍 探索</button>
+    <button class="tab" id="tabQz" onclick="setMode('quiz')">✏️ 練習</button>
+    <button class="tab" id="tabCh" onclick="setMode('chal')">🏆 挑戰</button>
+  </div>
+
+  <!-- ═══ 探索 ═══ -->
+  <div class="panel on" id="pEx">
+    <div class="stack">
+      <div class="stackhd">① 具體：你手上有這些鈔票（10 張 1000 元 ＝ 1 疊 ＝ 1 萬元）</div>
+      <div class="stackrow" id="stack"></div>
+    </div>
+
+    <div class="stackhd" style="text-align:center;margin:8px 0 2px;color:#94a3b8">↓ 放進定位板 ↓<br>② 表徵：位置代表位值</div>
+    <div class="boardwrap"><table class="board" id="bd"></table></div>
+
+    <div class="out">
+      <div class="stackhd" style="color:#94a3b8">③ 抽象：寫成數字、讀成國字</div>
+      <div class="num" id="oNum">0</div>
+      <div class="rd" id="oRead">零</div>
+      <div class="digits" id="oDig"></div>
+    </div>
+
+    <div class="bills" id="bills"></div>
+
+    <div class="ctrl">
+      <button class="btn" onclick="setRange(6)" id="r6">十萬以內</button>
+      <button class="btn on" onclick="setRange(8)" id="r8">一億以內</button>
+      <button class="btn" onclick="setRange(9)" id="r9">含億位</button>
+      <button class="btn" id="bGrp" onclick="toggleGroup()">四位一組</button>
+      <button class="btn" onclick="clearBoard()">清空</button>
+    </div>
+    <div class="hint">
+      課本從 <b>1000 元鈔票</b>開始：<b>10 張 1000 元紮成一疊，一疊是 10000 元</b>。<br>
+      拖曳或點一下鈔票放進定位板，同一格滿 10 就會自動往左進一位。長按格子歸零。
+    </div>
+  </div>
+
+  <!-- ═══ 練習 ═══ -->
+  <div class="panel" id="pQz">
+    <div class="stagebar">
+      <button class="st on" id="s0" onclick="goStage(0)">一 記數</button>
+      <button class="st" id="s1" onclick="goStage(1)">二 讀數</button>
+      <button class="st" id="s2" onclick="goStage(2)">三 寫數</button>
+    </div>
+    <div class="q">
+      <div class="qtitle" id="qTitle"></div>
+      <div class="qbody" id="qBody"></div>
+      <input class="ans" id="qAns" autocomplete="off">
+      <div class="ctrl">
+        <button class="btn on" onclick="checkAns()">確認</button>
+        <button class="btn" onclick="nextQ()">下一題 →</button>
+      </div>
+      <div class="fb" id="qFb"></div>
+      <div class="prog" id="qProg"></div>
+    </div>
+  </div>
+
+  <!-- ═══ 挑戰 ═══ -->
+  <div class="panel" id="pCh">
+    <div style="background:#fff;border-radius:12px;padding:18px;border:2px solid #e2e8f0">
+      <div class="chsrc" id="chSrc"></div>
+      <div style="font-size:20px;font-weight:700;line-height:1.7;color:#0f172a" id="chStem"></div>
+      <div class="chnote" id="chNote" style="display:none"></div>
+      <div id="chOpts" style="margin-top:12px"></div>
+      <div class="fb" id="chFb"></div>
+      <div class="chwhy" id="chWhy"></div>
+      <div class="ctrl"><button class="btn" onclick="nextChal()">下一題 →</button></div>
+      <div class="prog" id="chProg"></div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+/* 核心教學邏輯改由 place-value-core.js 提供，網頁與測試共用同一份。
+   （原本內嵌在這裡，測試只能用 node -e eval 挖出來跑，一改就壞。） */
+var PVC = PlaceValueCore;
+var NAMES = PVC.NAMES;
+var readNumber = PVC.readNumber;
+var readText = PVC.readText;
+var countSkippedZeros = PVC.countSkippedZeros;
+var groupStr = PVC.groupStr;
+var PRESETS = PVC.PRESETS;
+var fitRange = PVC.fitRange;
+
+/* ═════════ 探索模式 ═════════ */
+var digits = [0,0,0,0,0,0,0,0,0];   // index 0 = 個位
+var range = 8, grouping = false;
+
+function setMode(m) {
+  ['Ex','Qz','Ch'].forEach(function(k) {
+    var on = (k === 'Ex' && m === 'explore') || (k === 'Qz' && m === 'quiz')
+           || (k === 'Ch' && m === 'chal');
+    var pn = document.getElementById('p' + k), tb = document.getElementById('tab' + k);
+    if (pn) pn.className = 'panel' + (on ? ' on' : '');
+    if (tb) tb.className = 'tab' + (on ? ' on' : '');
+  });
+  cancelPending();          // 切分頁時讓在途的練習區回呼失效
+  if (m === 'chal') renderChal();
+}
+
+function setRange(n) {
+  if (PRESETS.indexOf(n) < 0) n = fitRange(n);   // 防呆：只接受合法值
+  range = n;
+  ['r6','r8','r9'].forEach(function(id){ document.getElementById(id).className = 'btn'; });
+  document.getElementById('r' + n).className = 'btn on';
+  for (var i = n; i < 9; i++) digits[i] = 0;
+  drawBoard(); drawBills(); update();
+}
+
+function toggleGroup() {
+  grouping = !grouping;
+  document.getElementById('bGrp').className = 'btn' + (grouping ? ' on' : '');
+  drawBoard();
+}
+
+function drawBoard() {
+  var h = '<tr>', b = '<tr>';
+  for (var i = range - 1; i >= 0; i--) {
+    var nm = NAMES[i], main = nm.slice(0, nm.length - 1), tail = nm.slice(-1);
+    // 每四位一組：個十百千｜萬十萬百萬千萬｜億…，故 pos 為 4 的倍數處畫線
+    var cls = (grouping && i > 0 && i % 4 === 0) ? ' class="grp"' : '';
+    h += '<th' + cls + '>' + main + '<small>' + tail + '</small></th>';
+    b += '<td class="cell" id="c' + i + '"' + (cls ? ' ' + cls.slice(1) : '') + '>0</td>';
+  }
+  document.getElementById('bd').innerHTML = h + '</tr>' + b + '</tr>';
+  for (var j = 0; j < range; j++) bindCell(j);
+  paint();
+}
+
+function bindCell(i) {
+  var el = document.getElementById('c' + i), timer = null;
+  el.addEventListener('pointerdown', function(e) {
+    e.preventDefault();
+    timer = setTimeout(function(){ digits[i] = 0; timer = null; update(); }, 600);
+  });
+  el.addEventListener('pointerup', function(e) {
+    e.preventDefault();
+    if (timer) { clearTimeout(timer); timer = null; addAt(i, 1); }
+  });
+  el.addEventListener('pointerleave', function(){ if (timer) { clearTimeout(timer); timer = null; } });
+}
+
+/* 在第 i 位加 n，處理進位 */
+function addAt(i, n) {
+  if (i >= range) return;
+
+  // 先試算會不會超出目前顯示範圍；會的話自動展開，展不下就拒絕（不可靜默丟失）
+  var trial = digits.slice();
+  trial[i] += n;
+  var k = i;
+  while (trial[k] >= 10 && k < 8) { trial[k] -= 10; k++; trial[k] += 1; }
+  if (trial[8] >= 10) {                     // 連億位都滿了：本工具的上限
+    var h0 = document.querySelector('.hint');
+    h0.innerHTML = '<b style="color:#dc2626">已經到這個定位板的上限（999999999）了，'
+                 + '不能再加了</b>';
+    return;                                  // 保留原值，不動任何一位
+  }
+  var need = 9;
+  while (need > 1 && trial[need - 1] === 0) need--;
+  var expanded = false;
+  if (need > range) {
+    var to = fitRange(need);
+    if (to !== range) { setRange(to); expanded = true; }
+  }
+
+  digits[i] += n;
+  var carried = false, carryFrom = i;
+  while (digits[i] >= 10 && i < range - 1) {
+    playBundle(i);              // 先讓學生看見 10 張被紮成一疊
+    carryFrom = i;
+    digits[i] -= 10; i++; digits[i] += 1; carried = true;
+    flash(i, 'drop');
+  }
+  update();
+  if (carried) showCarry(carryFrom);
+  if (expanded) {
+    var lab = {6:'十萬以內', 8:'一億以內', 9:'含億位'}[range] || ('' + range);
+    document.querySelector('.hint').innerHTML +=
+      '<br><b style="color:#1d4ed8">數字變大了，定位板已自動切換到「' + lab + '」</b>';
+  }
+}
+
+function flash(i, cls) {
+  var el = document.getElementById('c' + i);
+  if (!el) return;
+  el.classList.add(cls);
+  setTimeout(function(){ el.classList.remove(cls); }, 420);
+}
+
+function showCarry(fromPos) {
+  var h = document.querySelector('.hint');
+  h.innerHTML = (fromPos === 3)
+    ? '<b style="color:#059669">10 張 1000 元滿了！<u>紮成一疊</u>，那一疊就是 1 萬元 ✨</b>'
+    : '<b style="color:#059669">滿 10 了！換成 1 個'
+      + NAMES[fromPos + 1].replace('位', '') + '，往左進一位 ✨</b>';
+  setTimeout(function() {
+    h.innerHTML = '課本從 <b>1000 元鈔票</b>開始：<b>10 張 1000 元紮成一疊，一疊是 10000 元</b>。<br>拖曳或點一下鈔票放進定位板，同一格滿 10 就會自動往左進一位。長按格子歸零。';
+  }, 1800);
+}
+
+function paint() {
+  for (var i = 0; i < range; i++) {
+    var el = document.getElementById('c' + i);
+    if (!el) continue;
+    el.textContent = digits[i];
+    el.className = 'cell' + (digits[i] === 0 ? ' zero' : '') +
+                   ((grouping && i > 0 && i % 4 === 0) ? ' grp' : '');
+  }
+}
+
+function value() {
+  var v = 0;
+  for (var i = range - 1; i >= 0; i--) v = v * 10 + digits[i];
+  return v;
+}
+
+function update() {
+  paint();
+  drawStack();
+  var v = value();
+  document.getElementById('oNum').textContent = grouping ? groupStr(v) : String(v);
+  var toks = readNumber(v), html = '';
+  toks.forEach(function(t) {
+    html += t.k === 'keep' ? '<span class="keep">' + t.t + '</span>' : t.t;
+  });
+  document.getElementById('oRead').innerHTML = '讀作：' + html;
+  var d = v === 0 ? 1 : String(v).length;
+  var skipped = countSkippedZeros(v);
+  document.getElementById('oDig').innerHTML =
+    '這是 <b>' + d + '</b> 位數' +
+    (skipped ? '　｜　有 <b>' + skipped + '</b> 個 0 依規則不讀出來' : '');
+}
+
+
+
+function clearBoard() { digits = [0,0,0,0,0,0,0,0,0]; update(); }
+
+
+/* ═══ 具體端：把每一位的數量畫成看得見的鈔票（橫軸左半邊）═══
+   課本 p2「10 張紮成一疊」是本單元的起點，
+   若只用彩色按鈕代表鈔票，學生看到的其實已經是抽象符號了。 */
+function drawStack() {
+  var html = '';
+  for (var i = range - 1; i >= 0; i--) {
+    var n = digits[i];
+    if (!n) continue;
+    var b = null;
+    BILLS.forEach(function(x){ if (x.idx === i) b = x; });
+    var lab = b ? b.lab : UNITLAB(i);
+    var color = b ? BILLCOLOR[b.cls] : '#64748b';
+    var notes = '';
+    for (var k = 0; k < n; k++) {
+      notes += '<div class="note1" id="nt' + i + '_' + k + '" style="background:' + color +
+               ';bottom:' + (k * 4) + 'px">' + lab + '</div>';
+    }
+    html += '<div class="pile"><div class="notes" style="height:' + (24 + n * 4) + 'px">'
+          + notes + '</div><div class="lab">' + n + ' 張 ' + lab + '</div></div>';
+  }
+  document.getElementById('stack').innerHTML =
+    html || '<span style="color:#cbd5e1;font-size:15px">還沒有鈔票，點下面的鈔票放進來</span>';
+}
+
+var BILLCOLOR = {b0:'#14b8a6', b1:'#0ea5e9', b2:'#8b5cf6', b3:'#f59e0b', b4:'#ef4444'};
+function UNITLAB(i) {
+  var L = ['1 元','10 元','100 元','1000 元','1 疊(1萬)','10 萬','100 萬','1000 萬','1 億'];
+  return L[i] || '';
+}
+
+/* 紮成一疊往左移的動畫：課本「10 張紮成一疊」的視覺化 */
+/* 進位動畫必須畫在 overlay 上。
+   原本直接對 #stack 裡的節點加 class，但 update()→drawStack() 會立刻重建 DOM，
+   節點在瀏覽器繪製前就消失，動畫等於沒播。 */
+function playBundle(fromPos) {
+  var host = document.getElementById('stack');
+  if (!host) return;
+  var src = document.getElementById('nt' + fromPos + '_0');
+  if (!src) return;
+  var r0 = src.getBoundingClientRect();
+  var lab = (BILLS.filter(function(b){ return b.idx === fromPos; })[0] || {}).lab || '';
+  var color = getComputedStyle(src).backgroundColor;
+
+  var ov = document.createElement('div');
+  ov.className = 'bundleov';
+  ov.style.left = r0.left + 'px';
+  ov.style.top = (r0.top - 18) + 'px';
+  for (var k = 0; k < 10; k++) {
+    var d = document.createElement('div');
+    d.className = 'note1';
+    d.style.background = color;
+    d.style.bottom = (k * 4) + 'px';
+    d.textContent = lab;
+    ov.appendChild(d);
+  }
+  document.body.appendChild(ov);
+  requestAnimationFrame(function() {
+    ov.classList.add('bundle');
+    setTimeout(function(){ ov.classList.add('flyleft'); }, 240);
+  });
+  setTimeout(function(){ if (ov.parentNode) ov.parentNode.removeChild(ov); }, 900);
+}
+
+/* ── 鈔票 ── */
+/* 課本 p2：具體物是「1000 元鈔票」，10 張紮成一疊才是 10000 元。
+   第一層化聚（1000→10000）不能跳過，那是本單元的起點。 */
+var BILLS = [
+  {lab:'1000 元',  cls:'b0', idx:3, note:'10 張紮成一疊 ＝ 1 萬元'},
+  {lab:'1 疊(1萬)', cls:'b1', idx:4, note:'一疊 ＝ 10 張 1000 元'},
+  {lab:'10 萬',    cls:'b2', idx:5},
+  {lab:'100 萬',   cls:'b3', idx:6},
+  {lab:'1000 萬',  cls:'b4', idx:7}
+];
+
+function drawBills() {
+  var html = '';
+  BILLS.forEach(function(b, k) {
+    if (b.idx >= range) return;
+    html += '<button class="bill ' + b.cls + '" data-k="' + k + '">' + b.lab + '</button>';
+  });
+  document.getElementById('bills').innerHTML = html;
+  [].forEach.call(document.querySelectorAll('.bill'), bindBill);
+}
+
+function bindBill(el) {
+  var k = +el.getAttribute('data-k'), ghost = null, moved = false;
+  el.addEventListener('pointerdown', function(e) {
+    e.preventDefault();
+    moved = false;
+    el.setPointerCapture(e.pointerId);
+    ghost = document.createElement('div');
+    ghost.className = 'ghost ' + BILLS[k].cls;
+    ghost.textContent = BILLS[k].lab;
+    document.body.appendChild(ghost);
+    moveGhost(e);
+  });
+  el.addEventListener('pointermove', function(e) {
+    if (!ghost) return;
+    moved = true;
+    moveGhost(e);
+    highlightUnder(e, BILLS[k].idx);
+  });
+  el.addEventListener('pointerup', function(e) {
+    if (!ghost) return;
+    ghost.remove(); ghost = null;
+    clearHi();
+    var want = BILLS[k].idx;
+    if (!moved) { addAt(want, 1); flash(want, 'hit'); return; }   // 只是點一下＝放回它該去的位
+
+    var target = cellUnder(e);
+    if (target === null) return;                                   // 拖到空白處＝取消
+    if (target !== want) {                                         // 放錯位：拒絕並說明
+      flash(target, 'bad');
+      document.querySelector('.hint').innerHTML =
+        '<b style="color:#dc2626">' + BILLS[k].lab + ' 要放在「' + NAMES[want] + '」，'
+        + '不是「' + NAMES[target] + '」</b>';
+      return;
+    }
+    addAt(want, 1);
+    flash(want, 'hit');
+  });
+  function moveGhost(e) {
+    ghost.style.left = (e.clientX - 40) + 'px';
+    ghost.style.top = (e.clientY - 24) + 'px';
+  }
+}
+
+function cellUnder(e) {
+  var el = document.elementFromPoint(e.clientX, e.clientY);
+  if (el && el.classList && el.classList.contains('cell')) return +el.id.slice(1);
+  return null;
+}
+function highlightUnder(e, want) {
+  clearHi();
+  var i = cellUnder(e);
+  if (i === null) return;
+  // 只把「正確的那一格」標成可放；其他格標成不可放
+  document.getElementById('c' + i).classList.add(i === want ? 'drop' : 'bad');
+}
+function clearHi() {
+  [].forEach.call(document.querySelectorAll('.cell'),
+    function(c){ c.classList.remove('drop'); c.classList.remove('bad'); });
+}
+
+/* ═════════ 練習模式 ═════════ */
+/* 題目刻意集中在含 0 的數（課本活動一②③、活動二⑤最重視之處） */
+var QS = [
+  /* 關卡一 記數：給鈔票組成，答阿拉伯數字 */
+  [
+    {bills:'2 張 10 萬、9 張 1 萬', a:'290000'},
+    {bills:'3 張 1000 萬、8 張 100 萬、5 張 1 萬', a:'38050000'},
+    {bills:'4 張 100 萬、9 張 1 萬', a:'4090000'},
+    {bills:'1 張 1000 萬、6 張 10 萬', a:'10600000'}
+  ],
+  /* 關卡二 讀數：給數字，答中文讀法 */
+  [
+    {n:29100}, {n:30100}, {n:38005},
+    {n:48014008}, {n:47980009}, {n:46500000}, {n:48004000}
+  ],
+  /* 關卡三 寫數：給中文，答阿拉伯數字 */
+  [
+    {c:'八百零一萬零七', a:'8010007'},
+    {c:'六千零二十二萬', a:'60220000'},
+    {c:'四千一百萬零九百', a:'41000900'},
+    {c:'三萬八千零五', a:'38005'},
+    {c:'二千三百四十萬', a:'23400000'}
+  ]
+];
+var stage = 0, qi = 0, doneStage = [false,false,false];
+var solved = {};            // key = stage_qi，答對才記
+var pendingMsg = '';        // 跳回未答題時要保留的提示
+var advTimer = null;        // 轉場計時器
+var qGen = 0;               // generation token：切關/切模式時遞增，使舊回呼失效
+
+
+/* 所有練習區的延遲動作都走這裡。
+   之前 setTimeout(renderQ, 700) 沒保存也沒取消，700ms 內切關就會
+   用舊關卡的狀態重繪，把新關卡的答案清掉。 */
+function schedule(fn, ms) {
+  if (advTimer) { clearTimeout(advTimer); advTimer = null; }
+  var gen = qGen;
+  advTimer = setTimeout(function() {
+    advTimer = null;
+    if (gen !== qGen) return;        // 期間切過關/切過模式，這個回呼作廢
+    fn();
+  }, ms);
+}
+
+function cancelPending() {
+  qGen++;                            // 讓所有在途回呼失效
+  if (advTimer) { clearTimeout(advTimer); advTimer = null; }
+}
+
+function goStage(s) {
+  cancelPending();
+  stage = s; qi = 0;
+  for (var i = 0; i < 3; i++) {
+    document.getElementById('s' + i).className =
+      'st' + (i === s ? ' on' : (doneStage[i] ? ' done' : ''));
+  }
+  renderQ();
+}
+
+function curQ() { return QS[stage][qi]; }
+
+function renderQ() {
+  var q = curQ(), t = '', b = '';
+  if (stage === 0) { t = '下面共有多少元？寫成阿拉伯數字。'; b = q.bills; }
+  else if (stage === 1) { t = '這個數怎麼讀？（用國字寫出讀法，不必寫「讀作」）'; b = String(q.n); }
+  else { t = '用阿拉伯數字記記看。'; b = q.c; }
+  document.getElementById('qTitle').textContent = '關卡' + '一二三'.charAt(stage) + '　' + t;
+  document.getElementById('qBody').textContent = b;
+  document.getElementById('qAns').value = '';
+  var _fb = document.getElementById('qFb');
+  if (pendingMsg) { _fb.innerHTML = pendingMsg; _fb.className = 'fb no'; pendingMsg = ''; }
+  else { _fb.textContent = ''; _fb.className = 'fb'; }
+  document.getElementById('qProg').textContent =
+    '第 ' + (qi + 1) + ' 題，共 ' + QS[stage].length + ' 題';
+}
+
+function norm(s) {
+  return String(s).replace(/[\s,，]/g, '').replace(/讀作[:：]?/, '');
+}
+
+function checkAns() {
+  var q = curQ(), got = norm(document.getElementById('qAns').value), want, ok;
+  if (stage === 1) { want = readText(q.n); ok = got === want; }
+  else { want = q.a; ok = got === want; }
+  var fb = document.getElementById('qFb');
+  if (ok) {
+    fb.textContent = '✅ 答對了！';
+    fb.className = 'fb ok';
+    solved[stage + '_' + qi] = true;
+  } else {
+    fb.className = 'fb no';
+    fb.innerHTML = '❌ 再想想　正確答案：<b>' + want + '</b>' +
+      (stage === 1 ? '<br><span style="font-size:15px;color:#64748b">'
+        + '每四位一組：中間連續幾個 0 只讀一個零，每組後面的 0 不讀</span>' : '');
+  }
+}
+
+function nextQ() {
+  if (qi < QS[stage].length - 1) { qi++; renderQ(); return; }
+  // 最後一題：只有整關都答對才算完成，避免空白連按就過關
+  var all = QS[stage].every(function(_, k){ return solved[stage + '_' + k]; });
+  var fb = document.getElementById('qFb');
+  if (!all) {
+    var n = QS[stage].filter(function(_, k){ return !solved[stage + '_' + k]; }).length;
+    fb.className = 'fb no';
+    pendingMsg = '還有 <b>' + n + '</b> 題沒答對 —— 已跳回第一題還沒答對的';
+    fb.innerHTML = pendingMsg;
+    qi = QS[stage].findIndex(function(_, k){ return !solved[stage + '_' + k]; });
+    schedule(renderQ, 700);
+    return;
+  }
+  doneStage[stage] = true;
+  fb.className = 'fb ok';
+  fb.innerHTML = '🎉 關卡' + '一二三'.charAt(stage) + '完成！';
+  if (stage < 2) {
+    var target = stage + 1;                       // 捕捉固定目標，不讀可變的 stage
+    schedule(function(){ goStage(target); }, 900);
+  } else {
+    document.getElementById('s2').className = 'st done';
+  }
+}
+
+document.getElementById('qAns').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') checkAns();
+});
+
+/* 啟動 */
+setRange(8);
+goStage(0);
+var CHAL = [
+  {
+    "y": 109,
+    "n": 1,
+    "stem": "「四十億零三萬五千」寫成的數字中，「0」不會出現在哪個位值？",
+    "opts": [
+      "億位",
+      "萬位",
+      "百位",
+      "個位"
+    ],
+    "a": 2,
+    "why": "先把數字寫出來：4 0 0 0 0 3 5 0 0 0。萬位是 3，不是 0。",
+    "note": "本題出現「四十億」，超出本單元「一億以內」的範圍"
+  },
+  {
+    "y": 113,
+    "n": 10,
+    "stem": "大明讀大數時，漏數了大數最後面的 1 個 0，因此讀成「三百六十萬」。請問這個大數是多少？",
+    "opts": [
+      "36000000",
+      "3600000",
+      "3060000",
+      "360000"
+    ],
+    "a": 1,
+    "why": "三百六十萬是 3600000，最後面漏了 1 個 0，補回去就是 36000000。"
+  },
+  {
+    "y": 112,
+    "n": 5,
+    "stem": "王大明到郵局提款。提款單的金額欄由左到右是「億、仟、佰、拾、萬、仟、佰、拾、元」，其中「仟」和「拾」各出現兩次 —— 一次在「萬」的左邊、一次在「萬」的右邊。他在【萬左邊的拾】欄寫壹、【萬】欄寫貳、【萬右邊的仟】欄寫伍，其餘空白。請問他準備提領多少元？",
+    "opts": [
+      "125",
+      "12500",
+      "125000",
+      "1250000"
+    ],
+    "a": 3,
+    "why": "「萬」左邊的「拾」就是十萬位（填 1），「萬」欄是萬位（填 2），「萬」右邊的「仟」是千位（填 5），其餘位補 0，合起來是 125000。",
+    "note": "原題附提款單圖片，此處改寫成文字敘述"
+  }
+];
+
+/* ═══ 挑戰：學力檢測考古題（N-4-1）═══ */
+var CH_I = 0, CH_DONE = false;
+
+function renderChal() {
+  var q = CHAL[CH_I];
+  CH_DONE = false;
+  document.getElementById('chSrc').textContent =
+    q.y + ' 年 國小學力檢測 四年級 第 ' + q.n + ' 題';
+  document.getElementById('chStem').textContent = q.stem;
+  var h = '';
+  q.opts.forEach(function(o, i) {
+    h += '<button class="chopt" data-i="' + (i + 1) + '">' +
+         '\u2460\u2461\u2462\u2463'.charAt(i) + '　' + o + '</button>';
+  });
+  document.getElementById('chOpts').innerHTML = h;
+  [].forEach.call(document.querySelectorAll('.chopt'), function(el) {
+    el.addEventListener('click', function(){ pickChal(+el.getAttribute('data-i')); });
+  });
+  document.getElementById('chNote').innerHTML = q.note
+    ? '\u26a0\ufe0f ' + q.note : '';
+  document.getElementById('chNote').style.display = q.note ? 'block' : 'none';
+  var w = document.getElementById('chWhy');
+  w.style.display = 'none'; w.textContent = '';
+  document.getElementById('chFb').textContent = '';
+  document.getElementById('chFb').className = 'fb';
+  document.getElementById('chProg').textContent =
+    '第 ' + (CH_I + 1) + ' 題，共 ' + CHAL.length + ' 題';
+}
+
+function pickChal(i) {
+  if (CH_DONE) return;
+  CH_DONE = true;
+  var q = CHAL[CH_I], fb = document.getElementById('chFb');
+  [].forEach.call(document.querySelectorAll('.chopt'), function(el) {
+    var k = +el.getAttribute('data-i');
+    if (k === q.a) el.className = 'chopt ok';
+    else if (k === i) el.className = 'chopt no';
+  });
+  fb.className = 'fb ' + (i === q.a ? 'ok' : 'no');
+  fb.textContent = i === q.a ? '\u2705 答對了！' : '\u274c 正確答案是 ' +
+    '\u2460\u2461\u2462\u2463'.charAt(q.a - 1);
+  var w = document.getElementById('chWhy');
+  w.textContent = '\u{1F4A1} ' + q.why;
+  w.style.display = 'block';
+}
+
+function nextChal() { CH_I = (CH_I + 1) % CHAL.length; renderChal(); }
+
+</script>
+</body>
+</html>

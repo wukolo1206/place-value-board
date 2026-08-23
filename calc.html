@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>大數的加減</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:"Microsoft JhengHei","PingFang TC",sans-serif;
+     background:#f4f7fb;color:#1f2937;-webkit-text-size-adjust:100%}
+.wrap{max-width:1180px;margin:0 auto;padding:10px 12px 40px}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.back{text-decoration:none;color:#475569;font-size:15px;padding:6px 10px;border-radius:8px}
+h1{font-size:20px;margin:0;flex:1}
+.tabs{display:flex;gap:8px;margin-bottom:12px}
+.tab{flex:1;min-height:52px;font-size:19px;font-weight:700;border:2px solid #cbd5e1;
+     background:#fff;color:#64748b;border-radius:12px;cursor:pointer}
+.tab.on{background:#ea580c;border-color:#ea580c;color:#fff}
+.panel{display:none}.panel.on{display:block}
+.card{background:#fff;border-radius:12px;padding:16px;border:2px solid #e2e8f0;margin-bottom:12px}
+
+/* 直式 */
+.vwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.v{border-collapse:collapse;margin:0 auto;font-variant-numeric:tabular-nums}
+table.v td{width:52px;height:56px;text-align:center;font-size:34px;font-weight:700;color:#0f172a}
+table.v td.op{color:#ea580c;font-size:30px}
+table.v tr.line td{border-top:3px solid #0f172a}
+table.v td.carry{height:26px;font-size:17px;color:#dc2626;font-weight:700;vertical-align:bottom}
+table.v td.grp{border-left:3px dashed #94a3b8}
+.simp{text-align:center;font-size:30px;font-weight:700;color:#c2410c;margin:10px 0;min-height:40px}
+.ctrl{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.btn{min-height:48px;padding:0 18px;font-size:17px;font-weight:700;border-radius:10px;
+     border:2px solid #cbd5e1;background:#fff;color:#334155;cursor:pointer}
+.btn.on{background:#ea580c;border-color:#ea580c;color:#fff}
+.hint{font-size:15px;color:#64748b;text-align:center;margin-top:10px;line-height:1.6}
+.two{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+.note{flex:1;min-width:250px;background:#fff7ed;border:2px solid #fed7aa;border-radius:10px;
+      padding:12px;font-size:16px;line-height:1.7;color:#7c2d12}
+.note b{color:#c2410c}
+
+/* 練習：兩步驟 */
+.qtitle{font-size:17px;color:#475569;margin-bottom:8px}
+.qbody{font-size:30px;font-weight:700;text-align:center;margin:12px 0;color:#0f172a}
+.stepbox{background:#fff7ed;border:2px solid #fed7aa;border-radius:10px;padding:14px;margin:10px 0}
+.steplab{font-size:17px;font-weight:700;color:#c2410c;margin-bottom:8px}
+.ans{width:100%;max-width:340px;min-height:56px;font-size:26px;text-align:center;
+     border:2px solid #cbd5e1;border-radius:10px;display:block;margin:0 auto;
+     font-family:inherit;font-weight:700}
+.ans:focus{outline:none;border-color:#ea580c}
+.ans:disabled{background:#f1f5f9;color:#059669;border-color:#86efac}
+.fb{text-align:center;font-size:19px;font-weight:700;margin-top:12px;min-height:30px}
+.fb.ok{color:#059669}.fb.no{color:#dc2626}
+.prog{text-align:center;font-size:15px;color:#64748b;margin-top:10px}
+@media(min-width:900px){h1{font-size:24px}table.v td{width:64px;height:66px;font-size:42px}}
+
+/* ── 挑戰（學力檢測考古題）── */
+.chsrc{font-size:15px;color:#94a3b8;margin-bottom:6px}
+.chnote{font-size:14px;color:#b45309;background:#fffbeb;border:1px solid #fde68a;
+        border-radius:8px;padding:8px 10px;margin:8px 0;line-height:1.6}
+.chopt{display:block;width:100%;text-align:left;min-height:56px;margin:8px 0;padding:12px 16px;
+       font-size:19px;font-weight:700;border:2px solid #cbd5e1;background:#fff;color:#334155;
+       border-radius:10px;cursor:pointer;font-family:inherit;line-height:1.5}
+.chopt:active{transform:scale(.99)}
+.chopt.ok{background:#dcfce7;border-color:#059669;color:#065f46}
+.chopt.no{background:#fee2e2;border-color:#dc2626;color:#991b1b}
+.chwhy{font-size:16px;color:#334155;background:#f1f5f9;border-radius:8px;
+       padding:10px 12px;margin-top:10px;line-height:1.7;display:none}
+/* 觸控目標一律 ≥ 48px（教師大屏與學生 iPad）*/
+.back{min-height:48px;display:inline-flex;align-items:center}
+.st{min-height:48px}
+</style>
+</head>
+<body>
+<script src="place-value-core.js"></script>
+<div class="wrap">
+  <div class="top">
+    <a class="back" href="index.html">← 返回</a>
+    <h1>大數的加減</h1>
+  </div>
+  <div class="tabs">
+    <button class="tab on" id="tabEx" onclick="setMode('explore')">🔍 探索</button>
+    <button class="tab" id="tabQz" onclick="setMode('quiz')">✏️ 練習</button>
+    <button class="tab" id="tabCh" onclick="setMode('chal')">🏆 挑戰</button>
+  </div>
+
+  <!-- ═══ 探索 ═══ -->
+  <div class="panel on" id="pEx">
+    <div class="card">
+      <div class="vwrap"><table class="v" id="vt"></table></div>
+      <div class="simp" id="simp"></div>
+      <div class="ctrl">
+        <button class="btn on" id="bStep" onclick="nextStep()">▶ 一位一位算</button>
+        <button class="btn" onclick="resetCalc()">重來</button>
+        <button class="btn" id="bSimp" onclick="toggleSimp()">用「萬」簡記</button>
+        <button class="btn" id="bGrp" onclick="toggleGrp()">四位一組</button>
+      </div>
+      <div class="hint" id="eHint">按「一位一位算」，從個位開始逐位計算，進位借位會標出來。</div>
+      <div class="two">
+        <div class="note"><b>位數多的時候容易漏記</b><br>
+          課本教的簡記法：<b>3770000＋920000</b> 可以寫成 <b>377萬＋92萬</b>，
+          算完再把「萬」加回去。</div>
+        <div class="note"><b>減法借位</b><br>
+          某一位不夠減時，要向<b>左邊</b>借 1 過來當 10。
+          借出去的那一位要記得減 1。</div>
+      </div>
+    </div>
+    <div class="ctrl">
+      <button class="btn" onclick="setEx(3770000,920000,'+')">377萬＋92萬</button>
+      <button class="btn" onclick="setEx(72097,66889,'+')">72097＋66889</button>
+      <button class="btn" onclick="setEx(189665,123992,'-')">189665－123992</button>
+      <button class="btn" onclick="setEx(2500000,1630000,'+')">250萬＋163萬</button>
+      <button class="btn" onclick="randEx()">換一題</button>
+    </div>
+  </div>
+
+  <!-- ═══ 練習 ═══ -->
+  <div class="panel" id="pQz">
+    <div class="card">
+      <div class="qtitle" id="qMethod"></div>
+      <div class="qbody" id="qBody"></div>
+      <div id="qSteps"></div>
+      <div class="ctrl">
+        <button class="btn on" onclick="checkStep()">確認</button>
+        <button class="btn" onclick="nextQ()">下一題 →</button>
+      </div>
+      <div class="fb" id="qFb"></div>
+      <div class="prog" id="qProg"></div>
+    </div>
+  </div>
+
+  <!-- ═══ 挑戰 ═══ -->
+  <div class="panel" id="pCh">
+    <div style="background:#fff;border-radius:12px;padding:18px;border:2px solid #e2e8f0">
+      <div class="chsrc" id="chSrc"></div>
+      <div style="font-size:20px;font-weight:700;line-height:1.7;color:#0f172a" id="chStem"></div>
+      <div class="chnote" id="chNote" style="display:none"></div>
+      <div id="chOpts" style="margin-top:12px"></div>
+      <div class="fb" id="chFb"></div>
+      <div class="chwhy" id="chWhy"></div>
+      <div class="ctrl"><button class="btn" onclick="nextChal()">下一題 →</button></div>
+      <div class="prog" id="chProg"></div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+function setMode(m) {
+  ['Ex','Qz','Ch'].forEach(function(k) {
+    var on = (k === 'Ex' && m === 'explore') || (k === 'Qz' && m === 'quiz')
+           || (k === 'Ch' && m === 'chal');
+    var pn = document.getElementById('p' + k), tb = document.getElementById('tab' + k);
+    if (pn) pn.className = 'panel' + (on ? ' on' : '');
+    if (tb) tb.className = 'tab' + (on ? ' on' : '');
+  });
+  if (m === 'chal') renderChal();
+}
+
+/* ═══ 探索：逐位直式 ═══ */
+var A = 3770000, B = 920000, OP = '+', pos = -1, useSimp = false, grp = false;
+
+function setEx(a, b, op) {
+  if (op === '-' && a < b) {          // 本單元不處理負數，直接對調
+    var tmp = a; a = b; b = tmp;
+  }
+  A = a; B = b; OP = op;
+  // 換題後若新的數不是萬的倍數，簡記模式必須自動關掉，
+  // 否則直式會出現 75.064萬 這種小數（四年級還沒學小數的乘除）
+  if (useSimp && !canSimp()) {
+    useSimp = false;
+    document.getElementById('bSimp').className = 'btn';
+    resetCalc();
+    document.getElementById('eHint').innerHTML =
+      '這一題<b>不是萬的倍數</b>，已自動關閉「萬」簡記';
+    return;
+  }
+  resetCalc();
+}
+
+function randEx() {
+  var a, b;
+  if (useSimp) {                       // 簡記模式下只出萬的倍數，功能才用得下去
+    a = (10 + Math.floor(Math.random() * 890)) * 10000;
+    b = (10 + Math.floor(Math.random() * Math.max(1, a / 10000 - 10))) * 10000;
+  } else {
+    a = 100000 + Math.floor(Math.random() * 8900000);
+    b = 100000 + Math.floor(Math.random() * (a - 100000));
+  }
+  setEx(a, b, Math.random() < 0.5 ? '+' : '-');
+}
+function resetCalc() { pos = -1; drawV(); document.getElementById('eHint').textContent =
+  '按「一位一位算」，從個位開始逐位計算，進位借位會標出來。'; }
+
+function toggleSimp() {
+  if (!useSimp && !canSimp()) {     // 不是萬的倍數就不能簡記
+    document.getElementById('eHint').innerHTML =
+      '這一題<b>不能</b>用「萬」簡記 —— 兩個數要都是 10000 的倍數才行';
+    return;
+  }
+  useSimp = !useSimp;
+  document.getElementById('bSimp').className = 'btn' + (useSimp ? ' on' : '');
+  pos = -1;                          // 位數變了，重新從個位算起
+  drawV();
+  document.getElementById('eHint').innerHTML = useSimp
+    ? '已改用「萬」當單位。<b>算完記得把「萬」加回去。</b>'
+    : '按「一位一位算」，從個位開始逐位計算，進位借位會標出來。';
+}
+function toggleGrp() {
+  grp = !grp;
+  document.getElementById('bGrp').className = 'btn' + (grp ? ' on' : '');
+  drawV();
+}
+
+/* 簡記模式下，實際參與直式計算的是「以萬為單位」的兩個數 */
+function effA() { return useSimp ? A / 10000 : A; }
+function effB() { return useSimp ? B / 10000 : B; }
+/* 簡記只在兩數都是 10000 的倍數、且結果不為負時才成立。
+   本單元只處理自然數，介面也沒有負號輸入。 */
+function canSimp() {
+  if (A % 10000 !== 0 || B % 10000 !== 0) return false;
+  if (OP === '-' && A < B) return false;
+  return true;
+}
+
+function calcSteps() {
+  // 回傳每一位的 {d, mark} ，index 0 = 個位
+  var sa = String(effA()), sb = String(effB()),
+      w = Math.max(sa.length, sb.length) + (OP === '+' ? 1 : 0);
+  var res = [], carry = 0;
+  for (var i = 0; i < w; i++) {
+    var da = +(sa.charAt(sa.length - 1 - i) || 0);
+    var db = +(sb.charAt(sb.length - 1 - i) || 0);
+    if (OP === '+') {
+      var s = da + db + carry;
+      res.push({ d: s % 10, mark: carry ? '+1' : '' });
+      carry = s >= 10 ? 1 : 0;
+    } else {
+      var t = da - carry - db;
+      res.push({ d: (t + 10) % 10, mark: carry ? '-1' : '' });
+      carry = t < 0 ? 1 : 0;
+    }
+  }
+  while (res.length > 1 && res[res.length - 1].d === 0 && res[res.length - 1].mark === '') res.pop();
+  return res;
+}
+
+function drawV() {
+  var res = calcSteps();
+  var w = res.length;
+  var sa = String(effA()), sb = String(effB());
+  if (useSimp) {   // 以萬為單位簡記
+    var rs = String(OP === '+' ? (A + B) / 10000 : (A - B) / 10000);
+    document.getElementById('simp').textContent =
+      sa + '萬 ' + (OP === '+' ? '＋' : '－') + ' ' + sb + '萬 ＝ '
+      + (pos >= res.length - 1 ? rs + '萬' : '？');
+  } else {
+    document.getElementById('simp').textContent = '';
+  }
+  var W = Math.max(sa.length, sb.length, w);
+  function cellsOf(s, isOp) {
+    var h = '';
+    for (var i = 0; i < W; i++) {
+      var k = s.length - W + i;
+      var c = k < 0 ? '' : s.charAt(k);
+      // 虛線畫在千位左邊，才會落在「萬位｜千位」之間（四位一組）
+      // 每四位一組：虛線畫在千位、千萬位…的左邊（位置 p 除以 4 餘 3）
+      var cls = (grp && !useSimp && (W - 1 - i) % 4 === 3) ? ' class="grp"' : '';
+      h += '<td' + cls + '>' + c + '</td>';
+    }
+    return (isOp ? '<td class="op">' + (OP === '+' ? '＋' : '－') + '</td>' : '<td></td>') + h;
+  }
+  // 進位/借位列
+  var cr = '<td></td>';
+  for (var i = 0; i < W; i++) {
+    var idx = W - 1 - i;
+    var m = (idx < res.length && pos >= idx) ? res[idx].mark : '';
+    cr += '<td class="carry">' + m + '</td>';
+  }
+  // 答案列
+  var an = '<td></td>';
+  for (var j = 0; j < W; j++) {
+    var id2 = W - 1 - j;
+    var v = '';
+    if (id2 < res.length && pos >= id2) v = res[id2].d;
+    an += '<td>' + v + '</td>';
+  }
+  document.getElementById('vt').innerHTML =
+    '<tr>' + cr + '</tr>' +
+    '<tr>' + cellsOf(sa, false) + '</tr>' +
+    '<tr>' + cellsOf(sb, true) + '</tr>' +
+    '<tr class="line">' + an + '</tr>';
+}
+
+function nextStep() {
+  var res = calcSteps();
+  if (pos >= res.length - 1) { pos = res.length - 1; drawV();
+    var tot = (OP === '+' ? A + B : A - B);
+    document.getElementById('eHint').innerHTML = '算完了！答案是 <b>' + tot + '</b>'
+      + (useSimp ? '（直式上是 ' + (tot / 10000) + '，別忘了加回「萬」）' : ''); return; }
+  pos++;
+  drawV();
+  var names = ['個位','十位','百位','千位','萬位','十萬位','百萬位','千萬位','億位'];
+  // 簡記模式下每一位代表「萬」，位名要往左移四位
+  var nm = names[pos + (useSimp ? 4 : 0)] || '更高位';
+  var m = res[pos].mark;
+  document.getElementById('eHint').innerHTML = '算到 <b>' + nm + '</b>' +
+    (m === '+1' ? '　（上一位<b style="color:#dc2626">進位</b>過來 1）'
+     : m === '-1' ? '　（上一位<b style="color:#dc2626">借走</b>了 1）' : '');
+}
+
+/* ═══ 練習：依題目類型套用課本的兩種方法 ═══
+   課本活動四 p11 做做看：3770000＋920000 → 用「萬」簡記（兩數皆為萬的倍數）
+   課本素養吧 p12    ：72097＋66889   → 分別算幾個萬、幾個一（非萬倍數）
+   兩種方法的步驟不同，依題目自動切換。                              */
+var QQ = [
+  {a:72097,   b:66889,   op:'+', src:'素養吧 p12'},
+  {a:189665,  b:123992,  op:'-', src:'素養吧 p12'},
+  // 原為自組題 123992+66889：右組 3992+6889=10881 是五位數，
+  // 與「右組四位、左組幾個萬」的分組法矛盾，改用課本 p12 的另一組數字
+  // 算法修好後把進位題加回來，讓「進位到萬組」這件事真的被練到
+  {a:123992, b:66889,   op:'+', src:'素養吧 p12 數字（延伸：低組會進位）'},
+  {a:3770000, b:920000,  op:'+', src:'活動四 p11'},
+  {a:2500000, b:1630000, op:'+', src:'活動四 p11 做做看'},
+  {a:6800000, b:1580000, op:'-', src:'活動四 p11 做做看'}
+];
+var qi = 0, sub = 1;
+
+function lowOf(n){ return n % 10000; }
+function highOf(n){ return Math.floor(n / 10000); }
+/* 兩數都是萬的倍數 → 用簡記法；否則用素養吧的分組法 */
+function isWanQ(q){ return q.a % 10000 === 0 && q.b % 10000 === 0; }
+function total(q){ return q.op === '+' ? q.a + q.b : q.a - q.b; }
+function opCh(q){ return q.op === '+' ? ' ＋ ' : ' － '; }
+
+function stepBox(n, lab, id, extra) {
+  return '<div class="stepbox" id="box' + n + '"' + (extra || '') + '>'
+       + '<div class="steplab">' + lab + '</div>'
+       + '<input class="ans" id="' + id + '" inputmode="numeric" autocomplete="off"></div>';
+}
+
+function renderQ() {
+  var q = QQ[qi];
+  sub = 1;
+  var wan = isWanQ(q);
+  document.getElementById('qMethod').innerHTML = wan
+    ? '照課本「活動四」的方法：<b>用「萬」簡記來算</b>　<span style="color:#94a3b8">（' + q.src + '）</span>'
+    : '照課本「素養吧」的方法：<b>分別用幾個萬、幾個一來算</b>　<span style="color:#94a3b8">（' + q.src + '）</span>';
+  document.getElementById('qBody').textContent = q.a + opCh(q) + q.b + ' ＝ ?';
+
+  var html;
+  if (wan) {
+    html = stepBox(1, '第 1 步　' + q.a + ' 是幾萬？（只填數字，不用寫「萬」）', 'i1')
+         + stepBox(2, '第 2 步　' + q.b + ' 是幾萬？', 'i2', ' style="display:none"')
+         + stepBox(3, '第 3 步　算算看是幾萬？', 'i3', ' style="display:none"')
+         + stepBox(4, '第 4 步　換回原來的單位，答案是多少？', 'i4', ' style="display:none"');
+  } else {
+    html = stepBox(1, '第 1 步　先算「個」那一組（右邊四位）', 'i1')
+         + stepBox(2, '第 2 步　再算「萬」那一組（左邊）', 'i2', ' style="display:none"')
+         + stepBox(3, '合起來，答案是多少？', 'i3', ' style="display:none"');
+  }
+  document.getElementById('qSteps').innerHTML = html;
+  document.getElementById('qFb').textContent = '';
+  document.getElementById('qFb').className = 'fb';
+  document.getElementById('qProg').textContent = '第 ' + (qi + 1) + ' 題，共 ' + QQ.length + ' 題';
+  bindEnter();
+}
+
+function bindEnter() {
+  ['i1','i2','i3','i4'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') checkStep();
+    });
+  });
+}
+
+function val(id) {
+  var el = document.getElementById(id);
+  return el ? (el.value || '').replace(/[\s,，萬]/g, '') : '';
+}
+function lock(id) { var el = document.getElementById(id); if (el) el.disabled = true; }
+function show(n) { var el = document.getElementById('box' + n); if (el) el.style.display = 'block'; }
+
+
+/* 分組算理改由 place-value-core.js 提供，與測試共用同一份 */
+function groupCalc(q) { return PlaceValueCore.groupCalc(q.a, q.b, q.op); }
+
+function checkStep() {
+  var q = QQ[qi], fb = document.getElementById('qFb');
+  var ok, want, note = '';
+
+  if (isWanQ(q)) {
+    /* ── 簡記法（課本活動四）── */
+    if (sub === 1)      { want = highOf(q.a); }
+    else if (sub === 2) { want = highOf(q.b); }
+    else if (sub === 3) { want = q.op === '+' ? highOf(q.a) + highOf(q.b)
+                                              : highOf(q.a) - highOf(q.b);
+                          note = '（' + highOf(q.a) + '萬' + opCh(q) + highOf(q.b) + '萬）'; }
+    else                { want = total(q);
+                          note = '（' + (total(q) / 10000) + '萬 換回來就是 ' + total(q) + '）'; }
+    ok = val('i' + sub) === String(want);
+    if (ok) {
+      fb.className = 'fb ok';
+      fb.innerHTML = sub === 4 ? '🎉 完全正確！' + q.a + opCh(q) + q.b + ' ＝ <b>' + want
+                                 + '</b>（或 ' + (want / 10000) + '萬）'
+                               : '✅ 對！' + note;
+      lock('i' + sub);
+      if (sub < 4) { sub++; show(sub); }
+    } else {
+      fb.className = 'fb no';
+      fb.innerHTML = '❌ 正確是 <b>' + want + '</b>' + note
+        + (sub === 4 ? '<br><span style="font-size:15px;color:#64748b">'
+            + (want / 10000) + '萬 後面要補回 4 個 0</span>' : '');
+    }
+    return;
+  }
+
+  /* ── 素養吧分組法（非萬倍數）──
+     低組必須正規化成 0~9999，進位／借位要反映到高組。
+     上一輪只把會觸發的題目換掉，算法本身沒修 —— 那是治症狀不是治病。 */
+  var g = groupCalc(q);
+  if (sub === 1) {
+    want = g.low;                       // 已正規化的低組（0~9999）
+    note = g.carryNote;
+    ok = val('i1') === String(want);
+    if (ok) { fb.className = 'fb ok'; fb.innerHTML = '✅ 對！' + note; lock('i1'); sub = 2; show(2); }
+    else { fb.className = 'fb no';
+      fb.innerHTML = '❌ 右邊四位是 <b>' + g.la + '</b> 和 <b>' + g.lb + '</b>，'
+        + g.lowExplain + '，個那一組是 <b>' + want + '</b>'; }
+  } else if (sub === 2) {
+    want = g.high;                      // 已含進位／借位的高組
+    ok = val('i2') === String(want);
+    if (ok) { fb.className = 'fb ok'; fb.innerHTML = '✅ 對！' + want + ' 個萬'; lock('i2'); sub = 3; show(3); }
+    else { fb.className = 'fb no';
+      fb.innerHTML = '❌ 左邊是 <b>' + g.ha + '</b> 個萬和 <b>' + g.hb + '</b> 個萬，'
+        + g.highExplain + '，是 <b>' + want + '</b> 個萬'; }
+  } else {
+    want = total(q);
+    ok = val('i3') === String(want);
+    if (ok) { fb.className = 'fb ok';
+      fb.innerHTML = '🎉 完全正確！' + q.a + opCh(q) + q.b + ' ＝ <b>' + want + '</b>'; lock('i3'); }
+    else { fb.className = 'fb no';
+      fb.innerHTML = '❌ 正確答案是 <b>' + want + '</b>'
+        + '<br><span style="font-size:15px;color:#64748b">兩組合起來時，'
+        + '要注意「個」那一組有沒有進位或借位</span>'; }
+  }
+}
+
+function nextQ() { qi = (qi + 1) % QQ.length; renderQ(); }
+
+drawV();
+renderQ();
+var CHAL = [
+  {
+    "y": 108,
+    "n": 3,
+    "stem": "爸媽買了一棟 769 萬的房子，先付了頭期款 76 萬 9 千元。請問到交屋繳清全部款項時，爸媽還需要準備多少元？",
+    "opts": [
+      "8 萬 1 千元",
+      "9 萬 9 千元",
+      "693 萬 1 千元",
+      "692 萬 1 千元"
+    ],
+    "a": 4,
+    "why": "7690000 － 769000 ＝ 6921000，也就是 692 萬 1 千元。選 693 萬 1 千的人是借位少借了 1。"
+  },
+  {
+    "y": 108,
+    "n": 5,
+    "stem": "下面哪一個直式計算是正確的？",
+    "opts": [
+      "83萬640 － 8萬1000 ＝ 75萬360",
+      "83萬640 － 8萬1000 ＝ 74萬9640",
+      "83萬640 － 8萬1000 ＝ 85萬360",
+      "83萬640 － 8萬1000 ＝ 72萬360"
+    ],
+    "a": 2,
+    "why": "830640 － 81000 ＝ 749640。個那一組 640 不夠減 1000，要向萬借。"
+  },
+  {
+    "y": 114,
+    "n": 5,
+    "stem": "爸爸的年終獎金是 12 萬 5300 元，年終獎金和 2 月份的薪水合起來是 19 萬 700 元。請問爸爸 2 月份的薪水是多少元？",
+    "opts": [
+      "6 萬 5400 元",
+      "7 萬 4600 元",
+      "7 萬 4700 元",
+      "7 萬 5400 元"
+    ],
+    "a": 1,
+    "why": "右邊四位是 0700 和 5300，0700 不夠減 5300，要向萬那一組借 1 萬：10700 － 5300 ＝ 5400。萬那一組借出去 1，變成 19 － 1 － 12 ＝ 6。答案是 6 萬 5400 元。"
+  },
+  {
+    "y": 111,
+    "n": 11,
+    "stem": "最小的五位數和最大的三位數相差多少？",
+    "opts": [
+      "9001",
+      "9100",
+      "10112",
+      "10211"
+    ],
+    "a": 1,
+    "why": "最小的五位數是 10000，最大的三位數是 999，10000 － 999 ＝ 9001。"
+  },
+  {
+    "y": 109,
+    "n": 5,
+    "stem": "桃園市面積大約是 1220954000 平方公尺，新竹縣面積大約是 1427536900 平方公尺。請問兩個縣市的面積大約差多少萬平方公尺？",
+    "opts": [
+      "2 億 6582 萬",
+      "2 億 659 萬",
+      "20700 萬",
+      "2658 萬"
+    ],
+    "a": 2,
+    "why": "題目問「大約差多少萬」，要先把兩個數各自取概數到萬：1427536900 約 142754 萬、1220954000 約 122095 萬，相減得 20659 萬 ＝ 2 億 659 萬。若先精確相減 206582900 再換算會得到 20658 萬，與選項不同 —— 概數題要先取概數再算。",
+    "note": "本題數字超過一億，屬延伸題"
+  }
+];
+
+/* ═══ 挑戰：學力檢測考古題（N-4-1）═══ */
+var CH_I = 0, CH_DONE = false;
+
+function renderChal() {
+  var q = CHAL[CH_I];
+  CH_DONE = false;
+  document.getElementById('chSrc').textContent =
+    q.y + ' 年 國小學力檢測 四年級 第 ' + q.n + ' 題';
+  document.getElementById('chStem').textContent = q.stem;
+  var h = '';
+  q.opts.forEach(function(o, i) {
+    h += '<button class="chopt" data-i="' + (i + 1) + '">' +
+         '\u2460\u2461\u2462\u2463'.charAt(i) + '　' + o + '</button>';
+  });
+  document.getElementById('chOpts').innerHTML = h;
+  [].forEach.call(document.querySelectorAll('.chopt'), function(el) {
+    el.addEventListener('click', function(){ pickChal(+el.getAttribute('data-i')); });
+  });
+  document.getElementById('chNote').innerHTML = q.note
+    ? '\u26a0\ufe0f ' + q.note : '';
+  document.getElementById('chNote').style.display = q.note ? 'block' : 'none';
+  var w = document.getElementById('chWhy');
+  w.style.display = 'none'; w.textContent = '';
+  document.getElementById('chFb').textContent = '';
+  document.getElementById('chFb').className = 'fb';
+  document.getElementById('chProg').textContent =
+    '第 ' + (CH_I + 1) + ' 題，共 ' + CHAL.length + ' 題';
+}
+
+function pickChal(i) {
+  if (CH_DONE) return;
+  CH_DONE = true;
+  var q = CHAL[CH_I], fb = document.getElementById('chFb');
+  [].forEach.call(document.querySelectorAll('.chopt'), function(el) {
+    var k = +el.getAttribute('data-i');
+    if (k === q.a) el.className = 'chopt ok';
+    else if (k === i) el.className = 'chopt no';
+  });
+  fb.className = 'fb ' + (i === q.a ? 'ok' : 'no');
+  fb.textContent = i === q.a ? '\u2705 答對了！' : '\u274c 正確答案是 ' +
+    '\u2460\u2461\u2462\u2463'.charAt(q.a - 1);
+  var w = document.getElementById('chWhy');
+  w.textContent = '\u{1F4A1} ' + q.why;
+  w.style.display = 'block';
+}
+
+function nextChal() { CH_I = (CH_I + 1) % CHAL.length; renderChal(); }
+
+</script>
+</body>
+</html>

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>數的大小比較</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:"Microsoft JhengHei","PingFang TC",sans-serif;
+     background:#f4f7fb;color:#1f2937;-webkit-text-size-adjust:100%}
+.wrap{max-width:1180px;margin:0 auto;padding:10px 12px 40px}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.back{text-decoration:none;color:#475569;font-size:15px;padding:6px 10px;border-radius:8px}
+h1{font-size:20px;margin:0;flex:1}
+.tabs{display:flex;gap:8px;margin-bottom:12px}
+.tab{flex:1;min-height:52px;font-size:19px;font-weight:700;border:2px solid #cbd5e1;
+     background:#fff;color:#64748b;border-radius:12px;cursor:pointer}
+.tab.on{background:#0891b2;border-color:#0891b2;color:#fff}
+.panel{display:none}.panel.on{display:block}
+.card{background:#fff;border-radius:12px;padding:16px;border:2px solid #e2e8f0;margin-bottom:12px}
+.boardwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.cb{border-collapse:separate;border-spacing:0;margin:0 auto;background:#fff;
+         border:3px solid #155e75;border-radius:10px;overflow:hidden}
+table.cb th,table.cb td{border-right:2px solid #cffafe;text-align:center;min-width:54px}
+table.cb th:last-child,table.cb td:last-child{border-right:none}
+table.cb th{background:#cffafe;color:#155e75;font-size:14px;padding:5px 2px;font-weight:700}
+table.cb td{font-size:32px;font-weight:700;height:62px;color:#0f172a;transition:background .2s}
+table.cb td.dim{color:#e2e8f0}
+table.cb td.eq{background:#e0f2fe}
+table.cb td.win{background:#bbf7d0;color:#065f46}
+table.cb td.lose{background:#fee2e2;color:#991b1b}
+.lbl{background:#f8fafc;font-size:15px !important;font-weight:700;color:#475569;
+     height:auto !important;min-width:72px}
+.verdict{text-align:center;font-size:26px;font-weight:700;margin:14px 0;min-height:38px;color:#155e75}
+.ctrl{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.btn{min-height:48px;padding:0 18px;font-size:17px;font-weight:700;border-radius:10px;
+     border:2px solid #cbd5e1;background:#fff;color:#334155;cursor:pointer}
+.btn.on{background:#0891b2;border-color:#0891b2;color:#fff}
+.two{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+.strat{flex:1;min-width:260px;background:#f0f9ff;border:2px solid #bae6fd;
+       border-radius:10px;padding:12px;font-size:16px;line-height:1.7;color:#0c4a6e}
+.strat b{color:#0369a1}
+.hint{font-size:15px;color:#64748b;text-align:center;margin-top:10px;line-height:1.6}
+.ops{display:flex;gap:10px;justify-content:center;margin:14px 0}
+.op{min-width:88px;min-height:70px;font-size:34px;font-weight:700;border-radius:12px;
+    border:3px solid #cbd5e1;background:#fff;color:#334155;cursor:pointer}
+.op:active{transform:scale(.96)}
+.fb{text-align:center;font-size:19px;font-weight:700;margin-top:12px;min-height:30px}
+.fb.ok{color:#059669}.fb.no{color:#dc2626}
+.prog{text-align:center;font-size:15px;color:#64748b;margin-top:10px}
+@media(min-width:900px){h1{font-size:24px}table.cb td{font-size:40px;height:74px}}
+
+/* ── 挑戰（學力檢測考古題）── */
+.chsrc{font-size:15px;color:#94a3b8;margin-bottom:6px}
+.chnote{font-size:14px;color:#b45309;background:#fffbeb;border:1px solid #fde68a;
+        border-radius:8px;padding:8px 10px;margin:8px 0;line-height:1.6}
+.chopt{display:block;width:100%;text-align:left;min-height:56px;margin:8px 0;padding:12px 16px;
+       font-size:19px;font-weight:700;border:2px solid #cbd5e1;background:#fff;color:#334155;
+       border-radius:10px;cursor:pointer;font-family:inherit;line-height:1.5}
+.chopt:active{transform:scale(.99)}
+.chopt.ok{background:#dcfce7;border-color:#059669;color:#065f46}
+.chopt.no{background:#fee2e2;border-color:#dc2626;color:#991b1b}
+.chwhy{font-size:16px;color:#334155;background:#f1f5f9;border-radius:8px;
+       padding:10px 12px;margin-top:10px;line-height:1.7;display:none}
+/* 觸控目標一律 ≥ 48px（教師大屏與學生 iPad）*/
+.back{min-height:48px;display:inline-flex;align-items:center}
+.st{min-height:48px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <a class="back" href="index.html">← 返回</a>
+    <h1>數的大小比較</h1>
+  </div>
+  <div class="tabs">
+    <button class="tab on" id="tabEx" onclick="setMode('explore')">🔍 探索</button>
+    <button class="tab" id="tabQz" onclick="setMode('quiz')">✏️ 練習</button>
+    <button class="tab" id="tabCh" onclick="setMode('chal')">🏆 挑戰</button>
+  </div>
+
+  <!-- ═══ 探索 ═══ -->
+  <div class="panel on" id="pEx">
+    <div class="card">
+      <div class="boardwrap"><table class="cb" id="cbEx"></table></div>
+      <div class="verdict" id="eVer"></div>
+      <div class="ctrl">
+        <button class="btn on" onclick="stepCompare()">▶ 逐位比比看</button>
+        <button class="btn" onclick="resetCompare()">重來</button>
+      </div>
+      <div class="two">
+        <div class="strat"><b>方法一：從最高位比起</b><br>
+          兩個數位數一樣多時，從最左邊那一位開始比，
+          <b>第一個不一樣的位</b>就決定勝負。</div>
+        <div class="strat"><b>方法二：用位數比</b><br>
+          位數不同時根本不用比每一位 ——
+          <b>位數多的一定比較大</b>。</div>
+      </div>
+    </div>
+    <div class="ctrl">
+      <button class="btn" onclick="setPair(6422163,10555381)">故宮 北院／南院</button>
+      <button class="btn" onclick="setPair(9490995,9629053)">臺中／臺南</button>
+      <button class="btn" onclick="setPair(2641909,3642000)">2641909／3642000</button>
+      <button class="btn" onclick="randPair()">換一組</button>
+    </div>
+  </div>
+
+  <!-- ═══ 練習 ═══ -->
+  <div class="panel" id="pQz">
+    <div class="card">
+      <div style="text-align:center;font-size:17px;color:#475569">在 ○ 裡填入 ＞、＜ 或 ＝</div>
+      <div class="boardwrap" style="margin-top:12px"><table class="cb" id="cbQz"></table></div>
+      <div class="ops">
+        <button class="op" onclick="answer('&gt;')">＞</button>
+        <button class="op" onclick="answer('=')">＝</button>
+        <button class="op" onclick="answer('&lt;')">＜</button>
+      </div>
+      <div class="fb" id="qFb"></div>
+      <div class="ctrl"><button class="btn" onclick="nextQ()">下一題 →</button></div>
+      <div class="prog" id="qProg"></div>
+    </div>
+  </div>
+
+  <!-- ═══ 挑戰 ═══ -->
+  <div class="panel" id="pCh">
+    <div style="background:#fff;border-radius:12px;padding:18px;border:2px solid #e2e8f0">
+      <div class="chsrc" id="chSrc"></div>
+      <div style="font-size:20px;font-weight:700;line-height:1.7;color:#0f172a" id="chStem"></div>
+      <div class="chnote" id="chNote" style="display:none"></div>
+      <div id="chOpts" style="margin-top:12px"></div>
+      <div class="fb" id="chFb"></div>
+      <div class="chwhy" id="chWhy"></div>
+      <div class="ctrl"><button class="btn" onclick="nextChal()">下一題 →</button></div>
+      <div class="prog" id="chProg"></div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+var NAMES = ['個位','十位','百位','千位','萬位','十萬位','百萬位','千萬位','億位'];
+
+function setMode(m) {
+  ['Ex','Qz','Ch'].forEach(function(k) {
+    var on = (k === 'Ex' && m === 'explore') || (k === 'Qz' && m === 'quiz')
+           || (k === 'Ch' && m === 'chal');
+    var pn = document.getElementById('p' + k), tb = document.getElementById('tab' + k);
+    if (pn) pn.className = 'panel' + (on ? ' on' : '');
+    if (tb) tb.className = 'tab' + (on ? ' on' : '');
+  });
+  if (m === 'chal') renderChal();
+}
+
+/* 把數字補到 width 位，前面補 null（表示該位不存在） */
+function spread(n, width) {
+  var s = String(n), out = [];
+  for (var i = 0; i < width; i++) {
+    var k = s.length - width + i;
+    out.push(k < 0 ? null : s.charAt(k));
+  }
+  return out;
+}
+
+function renderTable(id, a, b, marks) {
+  var w = Math.max(String(a).length, String(b).length);
+  var A = spread(a, w), B = spread(b, w);
+  var h = '<tr><th class="lbl"></th>', r1 = '<tr><td class="lbl">甲</td>', r2 = '<tr><td class="lbl">乙</td>';
+  for (var i = 0; i < w; i++) {
+    h += '<th>' + NAMES[w - 1 - i] + '</th>';
+    var m = (marks && marks[i]) || '';
+    r1 += '<td class="' + (A[i] === null ? 'dim' : m) + '">' + (A[i] === null ? '·' : A[i]) + '</td>';
+    r2 += '<td class="' + (B[i] === null ? 'dim' : (m === 'win' ? 'lose' : m === 'lose' ? 'win' : m)) + '">'
+        + (B[i] === null ? '·' : B[i]) + '</td>';
+  }
+  document.getElementById(id).innerHTML = h + '</tr>' + r1 + '</tr>' + r2 + '</tr>';
+}
+
+/* ═══ 探索 ═══ */
+var eA = 6422163, eB = 10555381, step = -1, decided = false;
+
+function setPair(a, b) { eA = a; eB = b; resetCompare(); }
+function randPair() {
+  function g(){ var L = 6 + Math.floor(Math.random()*2), s = String(1+Math.floor(Math.random()*9));
+    for (var i=1;i<L;i++) s += String(Math.floor(Math.random()*10)); return +s; }
+  setPair(g(), g());
+}
+function resetCompare() {
+  step = -1; decided = false;
+  renderTable('cbEx', eA, eB, null);
+  document.getElementById('eVer').textContent = '';
+}
+
+function stepCompare() {
+  var w = Math.max(String(eA).length, String(eB).length);
+  var la = String(eA).length, lb = String(eB).length;
+  var ver = document.getElementById('eVer');
+
+  if (la !== lb) {   // 位數不同：直接用方法二
+    renderTable('cbEx', eA, eB, null);
+    ver.innerHTML = '位數不同！<b>' + (la > lb ? eA : eB) + '</b> 是 ' + Math.max(la,lb)
+      + ' 位數，比較大　→　' + eA + (la > lb ? ' ＞ ' : ' ＜ ') + eB;
+    return;
+  }
+  var A = spread(eA, w), B = spread(eB, w);
+  if (decided) return;              // 已經分出勝負，不再往下比
+  step++;
+  if (step >= w) { decided = true;
+    ver.innerHTML = '每一位都一樣　→　' + eA + ' ＝ ' + eB; return; }
+  var marks = [];
+  for (var i = 0; i < step; i++) marks.push('eq');
+  var da = +A[step], db = +B[step];
+  if (da === db) {
+    marks.push('eq');
+    renderTable('cbEx', eA, eB, marks);
+    ver.innerHTML = NAMES[w-1-step] + ' 一樣是 ' + da + '，<b>還分不出來</b>，再比下一位';
+  } else {
+    marks.push(da > db ? 'win' : 'lose');
+    renderTable('cbEx', eA, eB, marks);
+    ver.innerHTML = '<b>' + NAMES[w-1-step] + '</b> 分出勝負了！' + da + (da>db?' ＞ ':' ＜ ') + db
+      + '　→　' + eA + (da>db?' ＞ ':' ＜ ') + eB;
+    decided = true;
+  }
+}
+
+
+/* 位數不同時：整列標示較大的那個數，不逐位比 */
+function markWholeRow(rowNo) {
+  var rows = document.querySelectorAll('#cbQz tr');
+  if (rows.length < 3) return;
+  [1, 2].forEach(function(r) {
+    var tds = rows[r].querySelectorAll('td');
+    for (var i = 1; i < tds.length; i++) {
+      if (tds[i].classList.contains('dim')) continue;
+      tds[i].className = (r === rowNo) ? 'win' : 'lose';
+    }
+  });
+}
+
+/* ═══ 練習 ═══ */
+var PQ = [
+  [2641909, 3642000], [9000009, 10000001], [6422163, 10555381],
+  [48014008, 47980009], [46500000, 46500000], [9490995, 9629053],
+  [38005, 38050], [7008009, 7080009]
+];
+var qi = 0, answered = false;
+
+function drawQ() {
+  answered = false;
+  renderTable('cbQz', PQ[qi][0], PQ[qi][1], null);
+  document.getElementById('qFb').textContent = '';
+  document.getElementById('qFb').className = 'fb';
+  document.getElementById('qProg').textContent = '第 ' + (qi+1) + ' 題，共 ' + PQ.length + ' 題';
+}
+
+function answer(op) {
+  if (answered) return;
+  var a = PQ[qi][0], b = PQ[qi][1];
+  var right = a > b ? '>' : (a < b ? '<' : '=');
+  var fb = document.getElementById('qFb');
+  answered = true;
+  var w = Math.max(String(a).length, String(b).length);
+  var la = String(a).length, lb = String(b).length;
+  var A = spread(a, w), B = spread(b, w), marks = [], where = -1;
+
+  if (la !== lb) {
+    // 位數不同：課本的「方法二」根本不比每一位。
+    // 這裡若逐位標色，會把短數字最高位的大數字標成「勝」，
+    // 剛好強化「數字大的比較大」這個錯誤策略 —— 絕對不能這樣標。
+    marks = null;
+    renderTable('cbQz', a, b, null);
+    markWholeRow(la > lb ? 1 : 2);
+  } else {
+    for (var i = 0; i < w; i++) {
+      if (A[i] === B[i]) { marks.push('eq'); }
+      else { marks.push(+A[i] > +B[i] ? 'win' : 'lose'); where = i; break; }
+    }
+    renderTable('cbQz', a, b, marks);
+  }
+  if (op === right) {
+    fb.className = 'fb ok';
+    fb.innerHTML = '✅ 答對了！' + (String(a).length !== String(b).length
+      ? '（位數不同，位數多的比較大）'
+      : (where >= 0 ? '（' + NAMES[w-1-where] + ' 分出勝負）' : '（每一位都一樣）'));
+  } else {
+    fb.className = 'fb no';
+    fb.innerHTML = '❌ 正確是 <b>' + a + ' ' + (right==='>'?'＞':right==='<'?'＜':'＝') + ' ' + b + '</b>'
+      + (String(a).length !== String(b).length
+        ? '<br><span style="font-size:15px;color:#64748b">位數不同時，位數多的一定比較大</span>'
+        : (where >= 0 ? '<br><span style="font-size:15px;color:#64748b">從最高位比，'
+            + NAMES[w-1-where] + '就分出勝負了</span>' : ''));
+  }
+}
+
+function nextQ() {
+  qi = (qi + 1) % PQ.length;
+  drawQ();
+}
+
+resetCompare();
+drawQ();
+var CHAL = [
+  {
+    "y": 113,
+    "n": 18,
+    "stem": "甲數是由「2 個億和 40 個萬」組成，乙數是由「20400 個萬」組成，丙數是由「1 個億和 14000 個萬」組成。請問甲、乙、丙這三個數，哪個數最大？",
+    "opts": [
+      "甲數",
+      "乙數",
+      "丙數",
+      "一樣大"
+    ],
+    "a": 3,
+    "why": "先換成同一個單位再比：甲＝200400000、乙＝204000000、丙＝240000000，丙最大。",
+    "note": "本題出現「億」，略高於本單元範圍，但正是「先化為同單位再比較」的典型題"
+  }
+];
+
+/* ═══ 挑戰：學力檢測考古題（N-4-1）═══ */
+var CH_I = 0, CH_DONE = false;
+
+function renderChal() {
+  var q = CHAL[CH_I];
+  CH_DONE = false;
+  document.getElementById('chSrc').textContent =
+    q.y + ' 年 國小學力檢測 四年級 第 ' + q.n + ' 題';
+  document.getElementById('chStem').textContent = q.stem;
+  var h = '';
+  q.opts.forEach(function(o, i) {
+    h += '<button class="chopt" data-i="' + (i + 1) + '">' +
+         '\u2460\u2461\u2462\u2463'.charAt(i) + '　' + o + '</button>';
+  });
+  document.getElementById('chOpts').innerHTML = h;
+  [].forEach.call(document.querySelectorAll('.chopt'), function(el) {
+    el.addEventListener('click', function(){ pickChal(+el.getAttribute('data-i')); });
+  });
+  document.getElementById('chNote').innerHTML = q.note
+    ? '\u26a0\ufe0f ' + q.note : '';
+  document.getElementById('chNote').style.display = q.note ? 'block' : 'none';
+  var w = document.getElementById('chWhy');
+  w.style.display = 'none'; w.textContent = '';
+  document.getElementById('chFb').textContent = '';
+  document.getElementById('chFb').className = 'fb';
+  document.getElementById('chProg').textContent =
+    '第 ' + (CH_I + 1) + ' 題，共 ' + CHAL.length + ' 題';
+}
+
+function pickChal(i) {
+  if (CH_DONE) return;
+  CH_DONE = true;
+  var q = CHAL[CH_I], fb = document.getElementById('chFb');
+  [].forEach.call(document.querySelectorAll('.chopt'), function(el) {
+    var k = +el.getAttribute('data-i');
+    if (k === q.a) el.className = 'chopt ok';
+    else if (k === i) el.className = 'chopt no';
+  });
+  fb.className = 'fb ' + (i === q.a ? 'ok' : 'no');
+  fb.textContent = i === q.a ? '\u2705 答對了！' : '\u274c 正確答案是 ' +
+    '\u2460\u2461\u2462\u2463'.charAt(q.a - 1);
+  var w = document.getElementById('chWhy');
+  w.textContent = '\u{1F4A1} ' + q.why;
+  w.style.display = 'block';
+}
+
+function nextChal() { CH_I = (CH_I + 1) % CHAL.length; renderChal(); }
+
+</script>
+</body>
+</html>

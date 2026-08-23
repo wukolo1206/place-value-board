@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>分解與合成</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:"Microsoft JhengHei","PingFang TC",sans-serif;
+     background:#f4f7fb;color:#1f2937;-webkit-text-size-adjust:100%}
+.wrap{max-width:1180px;margin:0 auto;padding:10px 12px 40px}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.back{text-decoration:none;color:#475569;font-size:15px;padding:6px 10px;border-radius:8px}
+h1{font-size:20px;margin:0;flex:1}
+.tabs{display:flex;gap:8px;margin-bottom:12px}
+.tab{flex:1;min-height:52px;font-size:19px;font-weight:700;border:2px solid #cbd5e1;
+     background:#fff;color:#64748b;border-radius:12px;cursor:pointer}
+.tab.on{background:#7c3aed;border-color:#7c3aed;color:#fff}
+.panel{display:none}.panel.on{display:block}
+
+.card{background:#fff;border-radius:12px;padding:16px;border:2px solid #e2e8f0;margin-bottom:12px}
+.big{font-size:44px;font-weight:700;text-align:center;letter-spacing:3px;color:#0f172a;margin:8px 0}
+.parts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+.part{border-radius:10px;padding:10px 14px;font-size:19px;font-weight:700;
+      border:2px solid #ddd6fe;background:#f5f3ff;color:#5b21b6;min-height:52px;
+      display:flex;align-items:center;gap:6px;cursor:pointer}
+.part.off{opacity:.25}
+.part b{font-size:24px}
+.ctrl{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.btn{min-height:48px;padding:0 18px;font-size:17px;font-weight:700;border-radius:10px;
+     border:2px solid #cbd5e1;background:#fff;color:#334155;cursor:pointer}
+.btn.on{background:#7c3aed;border-color:#7c3aed;color:#fff}
+.hint{font-size:15px;color:#64748b;text-align:center;margin-top:10px;line-height:1.6}
+.slot{display:inline-block;min-width:64px;border-bottom:3px solid #7c3aed;
+      font-size:26px;font-weight:700;text-align:center;color:#5b21b6}
+
+.stagebar{display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap}
+.st{flex:1;min-width:96px;min-height:46px;font-size:15px;font-weight:700;border-radius:10px;
+    border:2px solid #cbd5e1;background:#fff;color:#64748b;cursor:pointer}
+.st.on{background:#059669;border-color:#059669;color:#fff}
+.st.done{border-color:#059669;color:#059669}
+.qtitle{font-size:17px;color:#475569;margin-bottom:10px}
+.qbody{font-size:26px;font-weight:700;text-align:center;margin:14px 0;color:#0f172a;line-height:1.6}
+.ans{width:100%;max-width:420px;min-height:56px;font-size:26px;text-align:center;
+     border:2px solid #cbd5e1;border-radius:10px;display:block;margin:0 auto;
+     font-family:inherit;font-weight:700}
+.ans:focus{outline:none;border-color:#7c3aed}
+.multi{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:10px 0}
+.mi{display:flex;align-items:center;gap:4px;font-size:19px;font-weight:700}
+.mi input{width:76px;min-height:52px;font-size:24px;text-align:center;font-family:inherit;
+          font-weight:700;border:2px solid #cbd5e1;border-radius:8px}
+.mi input:focus{outline:none;border-color:#7c3aed}
+.fb{text-align:center;font-size:19px;font-weight:700;margin-top:12px;min-height:30px}
+.fb.ok{color:#059669}.fb.no{color:#dc2626}
+.prog{text-align:center;font-size:15px;color:#64748b;margin-top:10px}
+@media(min-width:900px){h1{font-size:24px}.big{font-size:60px}}
+
+/* ── 挑戰（學力檢測考古題）── */
+.chsrc{font-size:15px;color:#94a3b8;margin-bottom:6px}
+.chnote{font-size:14px;color:#b45309;background:#fffbeb;border:1px solid #fde68a;
+        border-radius:8px;padding:8px 10px;margin:8px 0;line-height:1.6}
+.chopt{display:block;width:100%;text-align:left;min-height:56px;margin:8px 0;padding:12px 16px;
+       font-size:19px;font-weight:700;border:2px solid #cbd5e1;background:#fff;color:#334155;
+       border-radius:10px;cursor:pointer;font-family:inherit;line-height:1.5}
+.chopt:active{transform:scale(.99)}
+.chopt.ok{background:#dcfce7;border-color:#059669;color:#065f46}
+.chopt.no{background:#fee2e2;border-color:#dc2626;color:#991b1b}
+.chwhy{font-size:16px;color:#334155;background:#f1f5f9;border-radius:8px;
+       padding:10px 12px;margin-top:10px;line-height:1.7;display:none}
+
+/* ── 表徵重呈：答錯時把同一題換成定位板形式再呈現 ── */
+.scaffold{background:#fffbeb;border:3px solid #f59e0b;border-radius:12px;
+          padding:14px;margin-top:14px;display:none}
+.scaffold.on{display:block}
+.sctitle{font-size:17px;font-weight:700;color:#b45309;margin-bottom:4px}
+.scsub{font-size:15px;color:#92400e;margin-bottom:10px;line-height:1.6}
+.scwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.scb{border-collapse:separate;border-spacing:0;margin:0 auto;background:#fff;
+          border:3px solid #b45309;border-radius:10px;overflow:hidden}
+table.scb th,table.scb td{border-right:2px solid #fde68a;text-align:center;min-width:56px}
+table.scb th:last-child,table.scb td:last-child{border-right:none}
+table.scb th{background:#fef3c7;color:#92400e;font-size:14px;padding:5px 2px;font-weight:700}
+table.scb td{font-size:32px;font-weight:700;height:64px;color:#0f172a;cursor:pointer}
+table.scb td.empty{color:#fca5a5;background:#fef2f2}
+table.scb td.filled{background:#dcfce7;color:#065f46}
+.scmsg{text-align:center;font-size:17px;font-weight:700;margin-top:10px;min-height:26px;color:#b45309}
+/* 觸控目標一律 ≥ 48px（教師大屏與學生 iPad）*/
+.back{min-height:48px;display:inline-flex;align-items:center}
+.st{min-height:48px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <a class="back" href="index.html">← 返回</a>
+    <h1>分解與合成</h1>
+  </div>
+  <div class="tabs">
+    <button class="tab on" id="tabEx" onclick="setMode('explore')">🔍 探索</button>
+    <button class="tab" id="tabQz" onclick="setMode('quiz')">✏️ 練習</button>
+    <button class="tab" id="tabCh" onclick="setMode('chal')">🏆 挑戰</button>
+  </div>
+
+  <!-- ═══ 探索 ═══ -->
+  <div class="panel on" id="pEx">
+    <div class="card">
+      <div class="big" id="eNum">40980</div>
+      <div class="parts" id="eParts"></div>
+      <div class="hint" id="eHint">
+        點一下任一塊，可以把它<b>拿掉</b>看看數字會變成多少 —— 這就是「分解」與「合成」。
+      </div>
+    </div>
+    <div class="ctrl">
+      <button class="btn" onclick="setSample(40980)">40980</button>
+      <button class="btn" onclick="setSample(51957)">51957</button>
+      <button class="btn" onclick="setSample(9490995)">9490995</button>
+      <button class="btn" onclick="setSample(7008009)">7008009</button>
+      <button class="btn on" onclick="randomSample()">換一個數</button>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="hint" style="text-align:left">
+        <b>看清楚同一個數字在不同位置代表多少</b><br>
+        課本問：「51957 中的兩個 5，各表示多少？」<br>
+        上面每一塊都寫著它<b>真正的值</b>，位置不同，值就差很多。
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 練習 ═══ -->
+  <div class="panel" id="pQz">
+    <div class="stagebar">
+      <button class="st on" id="s0" onclick="goStage(0)">一 分解</button>
+      <button class="st" id="s1" onclick="goStage(1)">二 位值</button>
+      <button class="st" id="s2" onclick="goStage(2)">三 合成</button>
+      <button class="st" id="s3" onclick="goStage(3)">四 打亂</button>
+      <button class="st" id="s4" onclick="goStage(4)">五 跳位</button>
+    </div>
+    <div class="card">
+      <div class="qtitle" id="qTitle"></div>
+      <div class="qbody" id="qBody"></div>
+      <div id="qInput"></div>
+      <div class="ctrl">
+        <button class="btn on" onclick="checkAns()">確認</button>
+        <button class="btn" onclick="nextQ()">下一題 →</button>
+      </div>
+      <div class="fb" id="qFb"></div>
+      <div class="scaffold" id="scaf">
+        <div class="sctitle">🔁 換個方式看：回到定位板放放看</div>
+        <div class="scsub" id="scSub"></div>
+        <div class="scwrap"><table class="scb" id="scTbl"></table></div>
+        <div class="scmsg" id="scMsg"></div>
+        <div class="ctrl">
+          <button class="btn on" onclick="scaffoldDone()">我看懂了，再答一次</button>
+        </div>
+      </div>
+      <div class="prog" id="qProg"></div>
+    </div>
+  </div>
+
+  <!-- ═══ 挑戰 ═══ -->
+  <div class="panel" id="pCh">
+    <div style="background:#fff;border-radius:12px;padding:18px;border:2px solid #e2e8f0">
+      <div class="chsrc" id="chSrc"></div>
+      <div style="font-size:20px;font-weight:700;line-height:1.7;color:#0f172a" id="chStem"></div>
+      <div class="chnote" id="chNote" style="display:none"></div>
+      <div id="chOpts" style="margin-top:12px"></div>
+      <div class="fb" id="chFb"></div>
+      <div class="chwhy" id="chWhy"></div>
+      <div class="ctrl"><button class="btn" onclick="nextChal()">下一題 →</button></div>
+      <div class="prog" id="chProg"></div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+var UNIT = ['一','十','百','千','萬','十萬','百萬','千萬'];
+
+function setMode(m) {
+  ['Ex','Qz','Ch'].forEach(function(k) {
+    var on = (k === 'Ex' && m === 'explore') || (k === 'Qz' && m === 'quiz')
+           || (k === 'Ch' && m === 'chal');
+    var pn = document.getElementById('p' + k), tb = document.getElementById('tab' + k);
+    if (pn) pn.className = 'panel' + (on ? ' on' : '');
+    if (tb) tb.className = 'tab' + (on ? ' on' : '');
+  });
+  cancelPending();          // 切分頁時讓在途的練習區回呼失效
+  if (m === 'chal') renderChal();
+}
+
+/* ═══ 探索：分解成各位的積木，可以關掉 ═══ */
+var curN = 40980, off = {};
+
+function setSample(n) { curN = n; off = {}; drawParts(); }
+function randomSample() {
+  var len = 5 + Math.floor(Math.random() * 3), s = String(1 + Math.floor(Math.random() * 9));
+  for (var i = 1; i < len; i++) s += String(Math.floor(Math.random() * 10));
+  setSample(+s);
+}
+
+function drawParts() {
+  var s = String(curN), L = s.length, html = '';
+  for (var i = 0; i < L; i++) {
+    var d = +s.charAt(i), pos = L - 1 - i;
+    if (d === 0) continue;
+    var val = d * Math.pow(10, pos);
+    html += '<div class="part' + (off[pos] ? ' off' : '') + '" data-p="' + pos + '">'
+          + '<b>' + d + '</b> 個 ' + UNIT[pos]
+          + '<span style="font-size:15px;color:#7c3aed">＝' + val + '</span></div>';
+  }
+  document.getElementById('eParts').innerHTML = html;
+  [].forEach.call(document.querySelectorAll('.part'), function(el) {
+    el.addEventListener('click', function() {
+      var p = +el.getAttribute('data-p');
+      off[p] = !off[p];
+      drawParts();
+    });
+  });
+  // 重算目前顯示值
+  var v = 0;
+  for (var j = 0; j < L; j++) {
+    var dd = +s.charAt(j), pp = L - 1 - j;
+    if (dd === 0 || off[pp]) continue;
+    v += dd * Math.pow(10, pp);
+  }
+  document.getElementById('eNum').textContent = v;
+  var anyOff = Object.keys(off).some(function(k){ return off[k]; });
+  document.getElementById('eHint').innerHTML = anyOff
+    ? '拿掉了幾塊，數字變成 <b>' + v + '</b>。<b>被拿掉的位要補 0</b>，不能整個消失！'
+    : '點一下任一塊，可以把它<b>拿掉</b>看看數字會變成多少 —— 這就是「分解」與「合成」。';
+}
+
+/* ═══ 練習 ═══ */
+/* 題目全部取自課本活動一⑦～⑪與活動二⑥ */
+var QS = [
+  /* 0 分解：給數，答各位有幾個 */
+  [
+    {n:40980, ask:[4,3,2,1,0]},
+    {n:51957, ask:[4,3,2,1,0]},
+    {n:12300, ask:[4,3,2,1,0]}
+  ],
+  /* 1 位值辨識：某個數字在某位表示多少 */
+  [
+    {n:51957, d:5, which:'左邊那個', a:'50000'},
+    {n:51957, d:5, which:'右邊那個', a:'50'},
+    {n:27724, d:7, which:'右邊那個', a:'700'},
+    {n:2340, d:2, which:'唯一那個', a:'2000'}
+  ],
+  /* 2 合成：照位序給 */
+  [
+    {parts:[[1,4],[7,3],[2,2],[6,1],[4,0]], a:'17264'},
+    {parts:[[9,6],[4,5],[9,4],[9,2],[9,1],[5,0]], a:'9490995'}
+  ],
+  /* 3 合成（打亂順序） */
+  [
+    {parts:[[7,1],[5,3],[4,4]], a:'45070'},
+    {parts:[[6,4],[3,6],[4,2],[5,0]], a:'3060405'}
+  ],
+  /* 4 合成（跳位）★ 缺的位要補 0 */
+  [
+    {parts:[[3,4],[8,3],[9,0]], a:'38009'},
+    {parts:[[7,6],[8,3],[9,0]], a:'7008009'},
+    {parts:[[6,5],[1,4],[9,3],[6,1]], a:'619060'},
+    {parts:[[8,6],[3,4],[1,3],[5,0]], a:'8031005'}
+  ]
+];
+var stage = 0, qi = 0, done = [0,0,0,0,0];
+var solved = {}, advTimer = null, pendingMsg = '';
+var qGen = 0;   // generation token：切關/切模式時遞增，使舊回呼失效
+
+
+/* 所有練習區的延遲動作都走這裡。
+   之前 setTimeout(renderQ, 700) 沒保存也沒取消，700ms 內切關就會
+   用舊關卡的狀態重繪，把新關卡的答案清掉。 */
+function schedule(fn, ms) {
+  if (advTimer) { clearTimeout(advTimer); advTimer = null; }
+  var gen = qGen;
+  advTimer = setTimeout(function() {
+    advTimer = null;
+    if (gen !== qGen) return;        // 期間切過關/切過模式，這個回呼作廢
+    fn();
+  }, ms);
+}
+
+function cancelPending() {
+  qGen++;                            // 讓所有在途回呼失效
+  if (advTimer) { clearTimeout(advTimer); advTimer = null; }
+}
+
+function goStage(s) {
+  hideScaffold();
+  cancelPending();
+  stage = s; qi = 0;
+  for (var i = 0; i < 5; i++)
+    document.getElementById('s' + i).className =
+      'st' + (i === s ? ' on' : (done[i] ? ' done' : ''));
+  renderQ();
+}
+function curQ() { return QS[stage][qi]; }
+
+function partText(p) { return p[0] + ' 個 ' + UNIT[p[1]]; }
+
+function renderQ() {
+  var q = curQ(), t = '', b = '', inp = '';
+  if (stage === 0) {
+    t = '這個數可以分成幾個萬、幾個千、幾個百、幾個十和幾個一？';
+    b = String(q.n);
+    inp = '<div class="multi">';
+    q.ask.forEach(function(p) {
+      inp += '<span class="mi"><input id="i' + p + '" inputmode="numeric"> 個 ' + UNIT[p] + '</span>';
+    });
+    inp += '</div>';
+  } else if (stage === 1) {
+    t = '這個數裡的「' + q.d + '」表示多少？';
+    b = String(q.n) + '　←　' + q.which + ' ' + q.d;
+    inp = '<input class="ans" id="iA" inputmode="numeric" autocomplete="off">';
+  } else {
+    t = stage === 4
+      ? '合起來是多少？★ 注意：沒說到的位要補 0'
+      : '合起來是多少？';
+    b = q.parts.map(partText).join('、') + '，合起來是多少？';
+    inp = '<input class="ans" id="iA" inputmode="numeric" autocomplete="off">';
+  }
+  document.getElementById('qTitle').textContent =
+    '關卡' + '一二三四五'.charAt(stage) + '　' + t;
+  document.getElementById('qBody').textContent = b;
+  document.getElementById('qInput').innerHTML = inp;
+  var _fb = document.getElementById('qFb');
+  if (pendingMsg) { _fb.innerHTML = pendingMsg; _fb.className = 'fb no'; pendingMsg = ''; }
+  else { _fb.textContent = ''; _fb.className = 'fb'; }
+  document.getElementById('qProg').textContent =
+    '第 ' + (qi + 1) + ' 題，共 ' + QS[stage].length + ' 題';
+  var a = document.getElementById('iA');
+  if (a) a.addEventListener('keydown', function(e){ if (e.key === 'Enter') checkAns(); });
+}
+
+function checkAns() {
+  var q = curQ(), fb = document.getElementById('qFb'), ok, want;
+  if (stage === 0) {
+    var s = String(q.n), L = s.length; ok = true; want = [];
+    q.ask.forEach(function(p) {
+      var d = (p < L) ? +s.charAt(L - 1 - p) : 0;
+      want.push(d + ' 個 ' + UNIT[p]);
+      var el = document.getElementById('i' + p);
+      if (!el || el.value.trim() !== String(d)) ok = false;
+    });
+    want = want.join('、');
+  } else {
+    var got = (document.getElementById('iA').value || '').replace(/[\s,，]/g, '');
+    want = q.a; ok = got === want;
+  }
+  if (ok) {
+    fb.className = 'fb ok'; fb.textContent = '✅ 答對了！';
+    solved[stage + '_' + qi] = true;
+    hideScaffold();
+  } else {
+    fb.className = 'fb no';
+    // 合成題（關卡三四五）答錯 → 換成定位板的形式重呈同一題
+    if (stage >= 2) {
+      fb.innerHTML = '❌ 先別急著看答案 —— 我們回到定位板上放放看';
+      showScaffold(q);
+    } else {
+      fb.innerHTML = '❌ 再想想　正確答案：<b>' + want + '</b>';
+    }
+  }
+}
+
+/* ═══ 表徵重呈：把同一題換成定位板的形式再呈現一次 ═══
+   注意這**不是適性鷹架** —— 它沒有讀取學生的答案（contingency）、
+   沒有分層淡出（fading）、也沒有撤掉協助後的確認（責任移轉）。
+   三個特徵都沒有，所以本專案一律稱它為「表徵重呈」。
+   詳見 ../docs/互動教具設計流程.md 的〈核心原則〉1-B。 */
+var scafQ = null, scafFilled = {};
+
+function showScaffold(q) {   // 名稱沿用，實為表徵重呈
+  scafQ = q; scafFilled = {};
+  document.getElementById('scSub').innerHTML =
+    '題目說：<b>' + q.parts.map(partText).join('、') + '</b><br>'
+    + '點一下對應的格子把它放進去。放完看看 <b>空著的格子該填什麼</b>。';
+  drawScaffold();
+  document.getElementById('scaf').className = 'scaffold on';
+  document.getElementById('scMsg').textContent = '';
+}
+
+function hideScaffold() {
+  document.getElementById('scaf').className = 'scaffold';
+  scafQ = null;
+}
+
+function drawScaffold() {
+  if (!scafQ) return;
+  var maxPos = 0;
+  scafQ.parts.forEach(function(p){ if (p[1] > maxPos) maxPos = p[1]; });
+  var h = '<tr>', b = '<tr>';
+  for (var i = maxPos; i >= 0; i--) {
+    h += '<th>' + UNIT[i] + '</th>';
+    var v = scafFilled[i];
+    var cls = (v === undefined) ? 'empty' : 'filled';
+    b += '<td class="' + cls + '" data-p="' + i + '">'
+       + (v === undefined ? '?' : v) + '</td>';
+  }
+  document.getElementById('scTbl').innerHTML = h + '</tr>' + b + '</tr>';
+  [].forEach.call(document.querySelectorAll('#scTbl td'), function(el) {
+    el.addEventListener('click', function(){ tapScaffold(+el.getAttribute('data-p')); });
+  });
+}
+
+function tapScaffold(pos) {
+  if (!scafQ) return;
+  var msg = document.getElementById('scMsg');
+  var hit = null;
+  scafQ.parts.forEach(function(p){ if (p[1] === pos) hit = p[0]; });
+  if (hit !== null) {
+    scafFilled[pos] = hit;
+    msg.innerHTML = '放進 <b>' + hit + ' 個' + UNIT[pos] + '</b> 了';
+  } else {
+    // 題目沒提到這一位 —— 這正是跳位題的關鍵
+    scafFilled[pos] = 0;
+    msg.innerHTML = '題目<b>沒有提到</b>' + UNIT[pos]
+      + '，所以這一格要放 <b style="color:#dc2626">0</b>，不能空著！';
+  }
+  drawScaffold();
+  // 全部填滿就把答案顯示出來
+  var maxPos = 0;
+  scafQ.parts.forEach(function(p){ if (p[1] > maxPos) maxPos = p[1]; });
+  var done = true;
+  for (var i = 0; i <= maxPos; i++) if (scafFilled[i] === undefined) done = false;
+  if (done) {
+    var s = '';
+    for (var j = maxPos; j >= 0; j--) s += scafFilled[j];
+    msg.innerHTML = '每一格都放好了 → <b style="font-size:24px">' + s + '</b>';
+  }
+}
+
+function scaffoldDone() {
+  hideScaffold();
+  var fb = document.getElementById('qFb');
+  fb.className = 'fb';
+  fb.textContent = '再答一次看看 👇';
+  var a = document.getElementById('iA');
+  if (a) { a.value = ''; a.focus(); }
+}
+
+function nextQ() {
+  hideScaffold();
+  if (qi < QS[stage].length - 1) { qi++; renderQ(); return; }
+  var all = QS[stage].every(function(_, k){ return solved[stage + '_' + k]; });
+  var fb = document.getElementById('qFb');
+  if (!all) {
+    var n = QS[stage].filter(function(_, k){ return !solved[stage + '_' + k]; }).length;
+    fb.className = 'fb no';
+    pendingMsg = '還有 <b>' + n + '</b> 題沒答對 —— 已跳回第一題還沒答對的';
+    fb.innerHTML = pendingMsg;
+    qi = QS[stage].findIndex(function(_, k){ return !solved[stage + '_' + k]; });
+    schedule(renderQ, 700);
+    return;
+  }
+  done[stage] = 1;
+  fb.className = 'fb ok';
+  fb.innerHTML = '🎉 關卡' + '一二三四五'.charAt(stage) + '完成！';
+  if (stage < 4) {
+    var target = stage + 1;
+    schedule(function(){ goStage(target); }, 900);
+  } else {
+    document.getElementById('s4').className = 'st done';
+  }
+}
+
+drawParts();
+goStage(0);
+var CHAL = [
+  {
+    "y": 111,
+    "n": 18,
+    "stem": "「2 兆」和多少個「2 百萬」合起來一樣大？",
+    "opts": [
+      "10000000",
+      "1000000",
+      "10000",
+      "100"
+    ],
+    "a": 2,
+    "why": "2 兆 ÷ 2 百萬 ＝ 2000000000000 ÷ 2000000 ＝ 1000000。",
+    "note": "本題出現「兆」，超出本單元「一億以內」的範圍"
+  },
+  {
+    "y": 112,
+    "n": 11,
+    "stem": "下面哪個選項的答案不是一千萬？",
+    "opts": [
+      "200 × 50000",
+      "1000 × 10000",
+      "2500 × 4000",
+      "12500 × 8000"
+    ],
+    "a": 4,
+    "why": "12500 × 8000 ＝ 100000000，那是一億，不是一千萬。其餘三個都等於 10000000。"
+  }
+];
+
+/* ═══ 挑戰：學力檢測考古題（N-4-1）═══ */
+var CH_I = 0, CH_DONE = false;
+
+function renderChal() {
+  var q = CHAL[CH_I];
+  CH_DONE = false;
+  document.getElementById('chSrc').textContent =
+    q.y + ' 年 國小學力檢測 四年級 第 ' + q.n + ' 題';
+  document.getElementById('chStem').textContent = q.stem;
+  var h = '';
+  q.opts.forEach(function(o, i) {
+    h += '<button class="chopt" data-i="' + (i + 1) + '">' +
+         '\u2460\u2461\u2462\u2463'.charAt(i) + '　' + o + '</button>';
+  });
+  document.getElementById('chOpts').innerHTML = h;
+  [].forEach.call(document.querySelectorAll('.chopt'), function(el) {
+    el.addEventListener('click', function(){ pickChal(+el.getAttribute('data-i')); });
+  });
+  document.getElementById('chNote').innerHTML = q.note
+    ? '\u26a0\ufe0f ' + q.note : '';
+  document.getElementById('chNote').style.display = q.note ? 'block' : 'none';
+  var w = document.getElementById('chWhy');
+  w.style.display = 'none'; w.textContent = '';
+  document.getElementById('chFb').textContent = '';
+  document.getElementById('chFb').className = 'fb';
+  document.getElementById('chProg').textContent =
+    '第 ' + (CH_I + 1) + ' 題，共 ' + CHAL.length + ' 題';
+}
+
+function pickChal(i) {
+  if (CH_DONE) return;
+  CH_DONE = true;
+  var q = CHAL[CH_I], fb = document.getElementById('chFb');
+  [].forEach.call(document.querySelectorAll('.chopt'), function(el) {
+    var k = +el.getAttribute('data-i');
+    if (k === q.a) el.className = 'chopt ok';
+    else if (k === i) el.className = 'chopt no';
+  });
+  fb.className = 'fb ' + (i === q.a ? 'ok' : 'no');
+  fb.textContent = i === q.a ? '\u2705 答對了！' : '\u274c 正確答案是 ' +
+    '\u2460\u2461\u2462\u2463'.charAt(q.a - 1);
+  var w = document.getElementById('chWhy');
+  w.textContent = '\u{1F4A1} ' + q.why;
+  w.style.display = 'block';
+}
+
+function nextChal() { CH_I = (CH_I + 1) % CHAL.length; renderChal(); }
+
+</script>
+</body>
+</html>

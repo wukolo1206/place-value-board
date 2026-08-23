@@ -3,8 +3,8 @@ project: 互動定位板（四上第一單元）
 category: 學科工具集
 status: 開發中
 version: "v1.2 Codex 二輪 16 條修正 + 可重跑測試 2026-08-23"
-url: （尚未部署）
-next_action: 實機驗收（教師大屏＋學生 iPad）—— 這是發布前的阻斷項；之後才建 repo、開 Pages、回填 tools
+url: https://wukolo1206.github.io/place-value-board/
+next_action: 到 repo settings 開啟 GitHub Pages，再做實機驗收（教師大屏＋學生 iPad）
 updated: 2026-08-23
 ---
 

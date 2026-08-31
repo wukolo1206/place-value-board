@@ -60,6 +60,27 @@ table.exboard td.filled{background:#fff;color:#5b21b6}
 table.exboard td.drop{background:#dcfce7 !important;color:#059669}
 table.exboard td.bad{background:#fee2e2 !important;color:#dc2626}
 
+/* ── 練習模式：合成題先放定位板 ── */
+.qchips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:10px 0 14px}
+.qchip{padding:8px 14px;font-size:18px;font-weight:700;background:#f5f3ff;color:#5b21b6;
+       border:2px solid #ddd6fe;border-radius:10px;cursor:pointer;user-select:none;
+       touch-action:none;transition:transform .12s,background .15s}
+.qchip:active{transform:scale(.95)}
+.qchip.placed{background:#e2e8f0;color:#94a3b8;border-color:#cbd5e1}
+.qboard-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:10px auto 14px;padding-bottom:4px}
+table.qboard{border-collapse:separate;border-spacing:0;margin:0 auto;background:#fff;
+             border:2.5px solid #059669;border-radius:10px;overflow:hidden;box-shadow:0 2px 6px rgba(5,150,105,.1)}
+table.qboard th,table.qboard td{border-right:2px solid #a7f3d0;text-align:center;min-width:60px}
+table.qboard th:last-child,table.qboard td:last-child{border-right:none}
+table.qboard th{background:#ecfdf5;color:#065f46;font-size:15px;padding:6px 4px;font-weight:700}
+table.qboard td{font-size:32px;font-weight:700;height:64px;color:#0f172a;cursor:pointer;
+                transition:background .12s}
+table.qboard td.empty{color:#cbd5e1;background:#f0fdf4}
+table.qboard td.filled{background:#fff;color:#065f46}
+table.qboard td.zero{color:#dc2626;background:#fff}
+table.qboard td.drop{background:#bbf7d0 !important}
+table.qboard td.bad{background:#fee2e2 !important}
+
 .stagebar{display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap}
 .st{flex:1;min-width:96px;min-height:46px;font-size:15px;font-weight:700;border-radius:10px;
     border:2px solid #cbd5e1;background:#fff;color:#64748b;cursor:pointer}
@@ -504,8 +525,12 @@ function curQ() { return QS[stage][qi]; }
 
 function partText(p) { return p[0] + ' 個 ' + UNIT[p[1]]; }
 
+var qFilled = {};
+
 function renderQ() {
   var q = curQ(), t = '', b = '', inp = '';
+  qFilled = {};
+
   if (stage === 0) {
     t = '這個數可以分成幾個萬、幾個千、幾個百、幾個十和幾個一？';
     b = String(q.n);
@@ -519,11 +544,38 @@ function renderQ() {
     b = String(q.n) + '　←　' + q.which + ' ' + q.d;
     inp = '<input class="ans" id="iA" inputmode="numeric" autocomplete="off">';
   } else {
+    // 關卡三、四、五（合成題）：先放入定位板，再寫出數字
     t = stage === 4
-      ? '合起來是多少？★ 注意：沒說到的位要補 0'
-      : '合起來是多少？';
+      ? '先放進定位板，再寫出合起來的數字（★ 沒說到的位要補 0）'
+      : '先放進定位板，再寫出合起來的數字';
     b = q.parts.map(partText).join('、') + '，合起來是多少？';
-    inp = '<input class="ans" id="iA" inputmode="numeric" autocomplete="off">';
+
+    // 1. 題目卡片
+    var chipsHtml = '<div class="qchips" id="qChips">';
+    q.parts.forEach(function(p, idx) {
+      chipsHtml += '<div class="qchip" id="qc_' + idx + '" data-idx="' + idx + '" data-pos="' + p[1] + '" data-d="' + p[0] + '" onclick="clickQChip(' + idx + ')">'
+                 + p[0] + ' 個 ' + UNIT[p[1]] + '</div>';
+    });
+    chipsHtml += '</div>';
+
+    // 2. 定位板
+    var maxPos = 0;
+    q.parts.forEach(function(p){ if (p[1] > maxPos) maxPos = p[1]; });
+    var h = '<tr>', row = '<tr>';
+    for (var i = maxPos; i >= 0; i--) {
+      h += '<th>' + UNIT[i] + '</th>';
+      row += '<td class="empty" id="qtd_' + i + '" data-qpos="' + i + '" onclick="clickQCell(' + i + ')">?</td>';
+    }
+    var boardHtml = '<div style="font-size:15px;font-weight:700;color:#059669;text-align:center;margin:6px 0 4px">① 先放進定位板（點卡片或點格子填入）：</div>'
+                  + '<div class="qboard-wrap"><table class="qboard" id="qBoard">'
+                  + h + '</tr>' + row + '</tr></table></div>';
+
+    var msgHtml = '<div id="qBoardMsg" style="font-size:14px;color:#64748b;text-align:center;min-height:20px;margin-bottom:8px"></div>';
+
+    var ansHtml = '<div style="font-size:15px;font-weight:700;color:#475569;text-align:center;margin:10px 0 6px">② 合起來的數字是：</div>'
+                + '<input class="ans" id="iA" inputmode="numeric" placeholder="填寫或由定位板完成數字" autocomplete="off">';
+
+    inp = chipsHtml + boardHtml + msgHtml + ansHtml;
   }
   document.getElementById('qTitle').textContent =
     '關卡' + '一二三四五'.charAt(stage) + '　' + t;
@@ -536,6 +588,68 @@ function renderQ() {
     '第 ' + (qi + 1) + ' 題，共 ' + QS[stage].length + ' 題';
   var a = document.getElementById('iA');
   if (a) a.addEventListener('keydown', function(e){ if (e.key === 'Enter') checkAns(); });
+}
+
+function clickQChip(idx) {
+  var q = curQ();
+  if (!q || !q.parts || !q.parts[idx]) return;
+  var p = q.parts[idx];
+  fillQPos(p[1], p[0]);
+}
+
+function clickQCell(pos) {
+  var q = curQ();
+  if (!q || !q.parts) return;
+  var hit = null;
+  q.parts.forEach(function(p){ if (p[1] === pos) hit = p[0]; });
+  var msg = document.getElementById('qBoardMsg');
+  if (hit !== null) {
+    fillQPos(pos, hit);
+    if (msg) msg.innerHTML = '<span style="color:#059669">已填入 <b>' + hit + ' 個' + UNIT[pos] + '</b></span>';
+  } else {
+    fillQPos(pos, 0);
+    if (msg) msg.innerHTML = '題目<b>沒有提到</b>' + UNIT[pos] + '，所以這一格填 <b style="color:#dc2626">0</b>！';
+  }
+}
+
+function fillQPos(pos, val) {
+  qFilled[pos] = val;
+  var td = document.getElementById('qtd_' + pos);
+  if (td) {
+    td.textContent = val;
+    td.className = (val === 0) ? 'zero' : 'filled';
+    td.classList.add('drop');
+    setTimeout(function(){ if (td) td.classList.remove('drop'); }, 300);
+  }
+
+  var q = curQ();
+  if (q && q.parts) {
+    q.parts.forEach(function(p, idx) {
+      var qc = document.getElementById('qc_' + idx);
+      if (qc) {
+        if (qFilled[p[1]] !== undefined) qc.classList.add('placed');
+        else qc.classList.remove('placed');
+      }
+    });
+  }
+
+  var maxPos = 0;
+  q.parts.forEach(function(p){ if (p[1] > maxPos) maxPos = p[1]; });
+  var allFilled = true, ansStr = '';
+  for (var i = maxPos; i >= 0; i--) {
+    if (qFilled[i] === undefined) { allFilled = false; break; }
+    ansStr += String(qFilled[i]);
+  }
+
+  if (allFilled) {
+    var aInput = document.getElementById('iA');
+    if (aInput) {
+      aInput.value = ansStr;
+      aInput.focus();
+    }
+    var msg = document.getElementById('qBoardMsg');
+    if (msg) msg.innerHTML = '🎉 <b style="color:#059669">定位板填寫完成！合起來是 ' + ansStr + '，請點「確認」檢查答案。</b>';
+  }
 }
 
 function checkAns() {

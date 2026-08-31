@@ -39,8 +39,8 @@ td.cell.bad{background:#fecaca}
 
 /* ── 鈔票區 ── */
 .bills{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
-.bill{min-width:104px;min-height:56px;border-radius:10px;border:none;color:#fff;
-      font-size:18px;font-weight:700;cursor:pointer;touch-action:none;user-select:none}
+.bill{min-width:104px;min-height:56px;border-radius:10px;border:2px solid rgba(255,255,255,0.4);color:#fff;
+      font-size:18px;font-weight:700;cursor:pointer;touch-action:none;user-select:none;box-shadow:0 3px 6px rgba(0,0,0,0.12)}
 .bill:active{transform:scale(.95)}
 .b0{background:#14b8a6}.b1{background:#0ea5e9}.b2{background:#8b5cf6}.b3{background:#f59e0b}.b4{background:#ef4444}
 .ghost{position:fixed;pointer-events:none;z-index:99;opacity:.9;
@@ -83,6 +83,14 @@ td.cell.bad{background:#fecaca}
   td.cell{font-size:52px;height:96px}
   table.board th{font-size:17px;min-width:74px}
   .num{font-size:44px}.rd{font-size:32px}
+  .notes{width:116px}
+  .note1{width:116px;height:38px;font-size:15px}
+  .bundleov{width:116px}
+  .bundleov .note1{width:116px;height:38px}
+  .pile{min-width:124px;padding:10px 12px 12px}
+  .pile-pv{font-size:15px}
+  .pile .lab{font-size:15px}
+  .pile .lab .pcount{font-size:19px}
 }
 
 /* ── 挑戰（學力檢測考古題）── */
@@ -99,24 +107,32 @@ td.cell.bad{background:#fecaca}
        padding:10px 12px;margin-top:10px;line-height:1.7;display:none}
 
 /* ── 具體端：看得見的鈔票堆（橫軸左半邊）── */
-.stack{background:#fff;border:2px solid #e2e8f0;border-radius:12px;
-       padding:10px 12px;margin-top:12px}
-.stackhd{font-size:15px;color:#64748b;margin-bottom:6px}
-.stackrow{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;min-height:56px}
-.pile{display:flex;flex-direction:column;align-items:center;gap:2px}
-.pile .lab{font-size:13px;color:#64748b;margin-top:3px}
-.notes{position:relative;height:44px;width:56px}
-.note1{position:absolute;left:0;width:52px;height:20px;border-radius:3px;
-       border:1px solid rgba(0,0,0,.18);font-size:10px;color:#fff;
-       display:flex;align-items:center;justify-content:center;font-weight:700;
+.stack{background:#fff;border:2px solid #cbd5e1;border-radius:14px;
+       padding:14px 16px;margin-top:12px;box-shadow:0 2px 8px rgba(0,0,0,0.03)}
+.stackhd{font-size:16px;font-weight:700;color:#334155;margin-bottom:10px}
+.stackrow{display:flex;align-items:flex-end;justify-content:center;gap:14px;flex-wrap:wrap;min-height:80px}
+.pile{display:flex;flex-direction:column;align-items:center;gap:4px;
+      background:#f8fafc;border:1.5px solid #cbd5e1;border-radius:12px;
+      padding:8px 10px 10px;cursor:pointer;transition:all .15s ease;min-width:108px}
+.pile:hover{background:#eff6ff;border-color:#3b82f6;transform:translateY(-2px);
+            box-shadow:0 4px 12px rgba(59,130,246,0.15)}
+.pile-pv{font-size:14px;font-weight:700;color:#1e3a8a;background:#dbeafe;
+         padding:2px 8px;border-radius:6px;margin-bottom:4px;letter-spacing:0.5px}
+.pile .lab{font-size:14px;color:#334155;margin-top:5px;font-weight:600;text-align:center}
+.pile .lab .pcount{font-size:17px;color:#1d4ed8}
+.notes{position:relative;height:52px;width:100px}
+.note1{position:absolute;left:0;width:100px;height:34px;border-radius:6px;
+       border:1.5px solid rgba(255,255,255,0.7);box-shadow:0 2px 5px rgba(0,0,0,0.18);
+       font-size:14px;color:#fff;display:flex;align-items:center;justify-content:center;
+       font-weight:700;letter-spacing:0.5px;text-shadow:0 1px 2px rgba(0,0,0,0.3);
        transition:transform .3s,opacity .3s}
-.bundleov{position:fixed;z-index:80;pointer-events:none;width:56px;height:60px}
-.bundleov .note1{position:absolute;left:0}
-.bundle{outline:3px solid #dc2626;outline-offset:2px;border-radius:5px;
+.bundleov{position:fixed;z-index:80;pointer-events:none;width:100px;height:90px}
+.bundleov .note1{position:absolute;left:0;width:100px;height:34px}
+.bundle{outline:3px solid #dc2626;outline-offset:3px;border-radius:6px;
         animation:tie .55s ease}
 @keyframes tie{0%{transform:scale(1)}45%{transform:scale(.82)}100%{transform:scale(1)}}
 .flyleft{animation:fly .55s ease forwards}
-@keyframes fly{to{transform:translateX(-72px) scale(.72);opacity:.25}}
+@keyframes fly{to{transform:translateX(-80px) scale(.75);opacity:.25}}
 /* 觸控目標一律 ≥ 48px（教師大屏與學生 iPad）*/
 .back{min-height:48px;display:inline-flex;align-items:center}
 .st{min-height:48px}
@@ -384,13 +400,27 @@ function drawStack() {
     var notes = '';
     for (var k = 0; k < n; k++) {
       notes += '<div class="note1" id="nt' + i + '_' + k + '" style="background:' + color +
-               ';bottom:' + (k * 4) + 'px">' + lab + '</div>';
+               ';bottom:' + (k * 5) + 'px">' + lab + '</div>';
     }
-    html += '<div class="pile"><div class="notes" style="height:' + (24 + n * 4) + 'px">'
-          + notes + '</div><div class="lab">' + n + ' 張 ' + lab + '</div></div>';
+    var pvName = NAMES[i] || '';
+    html += '<div class="pile" id="pile_' + i + '" onclick="addAt(' + i + ', 1)" '
+          + 'onmouseenter="highlightCell(' + i + ', true)" onmouseleave="highlightCell(' + i + ', false)" '
+          + 'title="點一下可再加 1 張">'
+          + '<div class="pile-pv">' + pvName + '</div>'
+          + '<div class="notes" style="height:' + (36 + n * 5) + 'px">' + notes + '</div>'
+          + '<div class="lab"><b class="pcount">' + n + '</b> 張 ' + lab + '</div>'
+          + '</div>';
   }
   document.getElementById('stack').innerHTML =
-    html || '<span style="color:#cbd5e1;font-size:15px">還沒有鈔票，點下面的鈔票放進來</span>';
+    html || '<div style="color:#64748b;font-size:16px;padding:14px 0;width:100%;text-align:center">🪙 尚未放入鈔票。點選下方鈔票放進定位板，觀察鈔票與位值的對應 ✨</div>';
+}
+
+function highlightCell(i, on) {
+  var el = document.getElementById('c' + i);
+  if (el) {
+    if (on) el.classList.add('hit');
+    else el.classList.remove('hit');
+  }
 }
 
 var BILLCOLOR = {b0:'#14b8a6', b1:'#0ea5e9', b2:'#8b5cf6', b3:'#f59e0b', b4:'#ef4444'};
@@ -415,12 +445,12 @@ function playBundle(fromPos) {
   var ov = document.createElement('div');
   ov.className = 'bundleov';
   ov.style.left = r0.left + 'px';
-  ov.style.top = (r0.top - 18) + 'px';
+  ov.style.top = (r0.top - 20) + 'px';
   for (var k = 0; k < 10; k++) {
     var d = document.createElement('div');
     d.className = 'note1';
     d.style.background = color;
-    d.style.bottom = (k * 4) + 'px';
+    d.style.bottom = (k * 5) + 'px';
     d.textContent = lab;
     ov.appendChild(d);
   }

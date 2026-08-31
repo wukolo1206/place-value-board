@@ -23,7 +23,8 @@ h1{font-size:20px;margin:0;flex:1}
 .parts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
 .part{border-radius:10px;padding:10px 14px;font-size:19px;font-weight:700;
       border:2px solid #ddd6fe;background:#f5f3ff;color:#5b21b6;min-height:52px;
-      display:flex;align-items:center;gap:6px;cursor:pointer}
+      display:flex;align-items:center;gap:6px;cursor:pointer;transition:transform .12s,opacity .15s}
+.part:active{transform:scale(.97)}
 .part.off{opacity:.25}
 .part b{font-size:24px}
 .ctrl{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px}
@@ -33,6 +34,31 @@ h1{font-size:20px;margin:0;flex:1}
 .hint{font-size:15px;color:#64748b;text-align:center;margin-top:10px;line-height:1.6}
 .slot{display:inline-block;min-width:64px;border-bottom:3px solid #7c3aed;
       font-size:26px;font-weight:700;text-align:center;color:#5b21b6}
+
+/* ── 探索模式：數字卡片與定位板 ── */
+.num-chips{display:flex;gap:10px;justify-content:center;margin:12px 0 16px;flex-wrap:wrap}
+.dchip{min-width:54px;min-height:56px;padding:6px 14px;font-size:32px;font-weight:700;
+       color:#fff;background:#7c3aed;border-radius:10px;cursor:grab;touch-action:none;
+       user-select:none;display:flex;align-items:center;justify-content:center;
+       box-shadow:0 3px 8px rgba(124,58,237,.3);border:2px solid rgba(255,255,255,.4);
+       transition:transform .12s,opacity .15s,background .15s}
+.dchip:active{transform:scale(.95);cursor:grabbing}
+.dchip.placed{background:#cbd5e1;color:#64748b;box-shadow:none;border-color:#cbd5e1;cursor:default;opacity:.45}
+.ghost-chip{position:fixed;pointer-events:none;z-index:999;opacity:.92;font-size:32px;
+            font-weight:700;color:#fff;background:#7c3aed;border-radius:10px;
+            padding:6px 18px;box-shadow:0 8px 22px rgba(0,0,0,.3);transform:translate(-50%,-50%)}
+.exboard-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:12px auto;padding-bottom:4px}
+table.exboard{border-collapse:separate;border-spacing:0;margin:0 auto;background:#fff;
+              border:3px solid #7c3aed;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(124,58,237,.08)}
+table.exboard th,table.exboard td{border-right:2px solid #ddd6fe;text-align:center;min-width:68px}
+table.exboard th:last-child,table.exboard td:last-child{border-right:none}
+table.exboard th{background:#f5f3ff;color:#5b21b6;font-size:16px;padding:8px 4px;font-weight:700}
+table.exboard td{font-size:36px;font-weight:700;height:72px;color:#0f172a;cursor:pointer;
+                 transition:background .15s,color .15s}
+table.exboard td.empty{color:#cbd5e1;background:#faf5ff;font-size:28px}
+table.exboard td.filled{background:#fff;color:#5b21b6}
+table.exboard td.drop{background:#dcfce7 !important;color:#059669}
+table.exboard td.bad{background:#fee2e2 !important;color:#dc2626}
 
 .stagebar{display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap}
 .st{flex:1;min-width:96px;min-height:46px;font-size:15px;font-weight:700;border-radius:10px;
@@ -104,24 +130,40 @@ table.scb td.filled{background:#dcfce7;color:#065f46}
   <!-- ═══ 探索 ═══ -->
   <div class="panel on" id="pEx">
     <div class="card">
-      <div class="big" id="eNum">40980</div>
+      <div style="font-size:16px;font-weight:700;color:#64748b;text-align:center;margin-bottom:6px">
+        ① 原數與數字卡片（請將數字<b>拖曳</b>或<b>點一下</b>放進定位板）：
+      </div>
+      <div class="big" id="eNum" style="margin:4px 0 8px">40980</div>
+      <div class="num-chips" id="eChips"></div>
+
+      <div style="font-size:16px;font-weight:700;color:#5b21b6;text-align:center;margin:16px 0 6px">
+        ② 定位板（表徵：位置決定位值）：
+      </div>
+      <div class="exboard-wrap"><table class="exboard" id="exBoard"></table></div>
+
+      <div style="font-size:16px;font-weight:700;color:#64748b;text-align:center;margin:16px 0 6px">
+        ③ 位值分解展開（點擊積木可拿掉/合成）：
+      </div>
       <div class="parts" id="eParts"></div>
       <div class="hint" id="eHint">
         點一下任一塊，可以把它<b>拿掉</b>看看數字會變成多少 —— 這就是「分解」與「合成」。
       </div>
     </div>
     <div class="ctrl">
-      <button class="btn" onclick="setSample(40980)">40980</button>
-      <button class="btn" onclick="setSample(51957)">51957</button>
-      <button class="btn" onclick="setSample(9490995)">9490995</button>
-      <button class="btn" onclick="setSample(7008009)">7008009</button>
+      <button class="btn" onclick="setSample(40980, false)">40980</button>
+      <button class="btn" onclick="setSample(51957, false)">51957</button>
+      <button class="btn" onclick="setSample(9490995, false)">9490995</button>
+      <button class="btn" onclick="setSample(7008009, false)">7008009</button>
+      <button class="btn" onclick="setSample(916212, false)">916212</button>
       <button class="btn on" onclick="randomSample()">換一個數</button>
+      <button class="btn" onclick="fillAll()">⚡ 一鍵全放</button>
+      <button class="btn" onclick="resetPractice()">🎯 重新拉數</button>
     </div>
     <div class="card" style="margin-top:12px">
       <div class="hint" style="text-align:left">
         <b>看清楚同一個數字在不同位置代表多少</b><br>
         課本問：「51957 中的兩個 5，各表示多少？」<br>
-        上面每一塊都寫著它<b>真正的值</b>，位置不同，值就差很多。
+        把數字放進定位板後，下方每一塊都寫著它<b>真正的值</b>，位置不同，值就差很多。
       </div>
     </div>
   </div>
@@ -188,27 +230,182 @@ function setMode(m) {
   if (m === 'chal') renderChal();
 }
 
-/* ═══ 探索：分解成各位的積木，可以關掉 ═══ */
-var curN = 40980, off = {};
+/* ═══ 探索：把數字拉到定位板 ➔ 展開位值分解 ═══ */
+var curN = 40980, off = {}, placed = {};
 
-function setSample(n) { curN = n; off = {}; drawParts(); }
+function setSample(n, autoFill) {
+  curN = n;
+  off = {};
+  placed = {};
+  if (autoFill) {
+    var s = String(curN), L = s.length;
+    for (var i = 0; i < L; i++) placed[L - 1 - i] = true;
+  }
+  renderExplore();
+}
+
 function randomSample() {
   var len = 5 + Math.floor(Math.random() * 3), s = String(1 + Math.floor(Math.random() * 9));
   for (var i = 1; i < len; i++) s += String(Math.floor(Math.random() * 10));
-  setSample(+s);
+  setSample(+s, false);
+}
+
+function fillAll() {
+  var s = String(curN), L = s.length;
+  for (var i = 0; i < L; i++) placed[L - 1 - i] = true;
+  renderExplore();
+}
+
+function resetPractice() {
+  placed = {};
+  off = {};
+  renderExplore();
+}
+
+function renderExplore() {
+  drawChips();
+  drawExBoard();
+  drawParts();
+}
+
+function drawChips() {
+  var s = String(curN), L = s.length, html = '';
+  for (var i = 0; i < L; i++) {
+    var d = s.charAt(i), pos = L - 1 - i;
+    var isPl = !!placed[pos];
+    html += '<div class="dchip' + (isPl ? ' placed' : '') + '" data-pos="' + pos + '" data-d="' + d + '">'
+          + d + '</div>';
+  }
+  document.getElementById('eChips').innerHTML = html;
+  [].forEach.call(document.querySelectorAll('.dchip'), bindChip);
+}
+
+function bindChip(el) {
+  var pos = +el.getAttribute('data-pos'), d = el.getAttribute('data-d');
+  var ghost = null, moved = false;
+
+  el.addEventListener('pointerdown', function(e) {
+    if (placed[pos]) return;
+    e.preventDefault();
+    moved = false;
+    el.setPointerCapture(e.pointerId);
+    ghost = document.createElement('div');
+    ghost.className = 'ghost-chip';
+    ghost.textContent = d;
+    document.body.appendChild(ghost);
+    moveGhost(e);
+  });
+
+  el.addEventListener('pointermove', function(e) {
+    if (!ghost) return;
+    moved = true;
+    moveGhost(e);
+    highlightCellUnder(e, pos);
+  });
+
+  el.addEventListener('pointerup', function(e) {
+    if (!ghost) return;
+    ghost.remove(); ghost = null;
+    clearExHi();
+
+    if (!moved) {
+      // 點一下 ＝ 自動放進它該去的位
+      placeDigit(pos);
+      return;
+    }
+
+    var targetPos = cellUnder(e);
+    if (targetPos === null) return; // 拖到空白處取消
+    if (targetPos !== pos) {
+      flashCell(targetPos, 'bad');
+      document.getElementById('eHint').innerHTML =
+        '<b style="color:#dc2626">這個「' + d + '」是 ' + UNIT[pos] + ' 位的，要放在「' + UNIT[pos] + '」喔！</b>';
+      return;
+    }
+    placeDigit(pos);
+  });
+
+  function moveGhost(e) {
+    ghost.style.left = e.clientX + 'px';
+    ghost.style.top = e.clientY + 'px';
+  }
+}
+
+function placeDigit(pos) {
+  placed[pos] = true;
+  flashCell(pos, 'drop');
+  renderExplore();
+}
+
+function cellUnder(e) {
+  var el = document.elementFromPoint(e.clientX, e.clientY);
+  if (!el) return null;
+  var target = el.closest ? el.closest('td[data-ex-pos]') : null;
+  if (target && target.getAttribute('data-ex-pos') !== null) {
+    return +target.getAttribute('data-ex-pos');
+  }
+  return null;
+}
+
+function highlightCellUnder(e, wantPos) {
+  clearExHi();
+  var p = cellUnder(e);
+  if (p === null) return;
+  var cell = document.getElementById('ec_' + p);
+  if (cell) cell.classList.add(p === wantPos ? 'drop' : 'bad');
+}
+
+function clearExHi() {
+  [].forEach.call(document.querySelectorAll('.exboard td'), function(c) {
+    c.classList.remove('drop'); c.classList.remove('bad');
+  });
+}
+
+function flashCell(pos, cls) {
+  var el = document.getElementById('ec_' + pos);
+  if (!el) return;
+  el.classList.add(cls);
+  setTimeout(function(){ el.classList.remove(cls); }, 450);
+}
+
+function drawExBoard() {
+  var s = String(curN), L = s.length;
+  var h = '<tr>', b = '<tr>';
+  for (var i = L - 1; i >= 0; i--) {
+    h += '<th>' + UNIT[i] + '</th>';
+    var isPl = !!placed[i];
+    var d = s.charAt(L - 1 - i);
+    var cls = isPl ? 'filled' : 'empty';
+    b += '<td class="' + cls + '" id="ec_' + i + '" data-ex-pos="' + i + '" onclick="onCellClick(' + i + ')">'
+       + (isPl ? d : '?') + '</td>';
+  }
+  document.getElementById('exBoard').innerHTML = h + '</tr>' + b + '</tr>';
+}
+
+function onCellClick(pos) {
+  if (!placed[pos]) {
+    placeDigit(pos);
+  }
 }
 
 function drawParts() {
   var s = String(curN), L = s.length, html = '';
+  var allPlaced = true, anyPlaced = false;
+
   for (var i = 0; i < L; i++) {
     var d = +s.charAt(i), pos = L - 1 - i;
-    if (d === 0) continue;
+    if (!placed[pos]) { allPlaced = false; continue; }
+    anyPlaced = true;
+    if (d === 0) continue; // 0 的位不生成非零卡片
     var val = d * Math.pow(10, pos);
     html += '<div class="part' + (off[pos] ? ' off' : '') + '" data-p="' + pos + '">'
           + '<b>' + d + '</b> 個 ' + UNIT[pos]
           + '<span style="font-size:15px;color:#7c3aed">＝' + val + '</span></div>';
   }
-  document.getElementById('eParts').innerHTML = html;
+
+  document.getElementById('eParts').innerHTML =
+    html || '<div style="color:#94a3b8;font-size:16px;padding:12px 0;text-align:center">👇 請先把上方數字拉進定位板，位值積木就會在此展開 ✨</div>';
+
   [].forEach.call(document.querySelectorAll('.part'), function(el) {
     el.addEventListener('click', function() {
       var p = +el.getAttribute('data-p');
@@ -216,18 +413,25 @@ function drawParts() {
       drawParts();
     });
   });
+
   // 重算目前顯示值
   var v = 0;
   for (var j = 0; j < L; j++) {
     var dd = +s.charAt(j), pp = L - 1 - j;
-    if (dd === 0 || off[pp]) continue;
+    if (dd === 0 || off[pp] || !placed[pp]) continue;
     v += dd * Math.pow(10, pp);
   }
-  document.getElementById('eNum').textContent = v;
+  document.getElementById('eNum').textContent = anyPlaced ? v : curN;
+
   var anyOff = Object.keys(off).some(function(k){ return off[k]; });
-  document.getElementById('eHint').innerHTML = anyOff
-    ? '拿掉了幾塊，數字變成 <b>' + v + '</b>。<b>被拿掉的位要補 0</b>，不能整個消失！'
-    : '點一下任一塊，可以把它<b>拿掉</b>看看數字會變成多少 —— 這就是「分解」與「合成」。';
+  var hintEl = document.getElementById('eHint');
+  if (anyOff) {
+    hintEl.innerHTML = '拿掉了幾塊，數字變成 <b>' + v + '</b>。<b>被拿掉的位要補 0</b>，不能整個消失！';
+  } else if (allPlaced) {
+    hintEl.innerHTML = '🎉 <b>太棒了！所有數字已放進定位板！</b><br>點一下任一塊，可以把它<b>拿掉</b>看看數字會變成多少 —— 這就是「分解」與「合成」。';
+  } else {
+    hintEl.innerHTML = '👉 請將上方數字<b>拉進</b>（或<b>點一下</b>）對應的定位板欄位，觀察每個數字的真正位值。';
+  }
 }
 
 /* ═══ 練習 ═══ */
@@ -466,7 +670,7 @@ function nextQ() {
   }
 }
 
-drawParts();
+setSample(40980, true);
 goStage(0);
 var CHAL = [
   {

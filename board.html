@@ -78,6 +78,28 @@ td.cell.bad{background:#fecaca}
 .fb{text-align:center;font-size:19px;font-weight:700;margin-top:12px;min-height:30px}
 .fb.ok{color:#059669}.fb.no{color:#dc2626}
 .prog{text-align:center;font-size:15px;color:#64748b;margin-top:10px}
+
+/* ── 練習模式：定位板互動 ── */
+.qchips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:10px 0 14px}
+.qchip{padding:8px 14px;font-size:18px;font-weight:700;background:#eff6ff;color:#1e3a8a;
+       border:2px solid #bfdbfe;border-radius:10px;cursor:pointer;user-select:none;
+       touch-action:none;transition:transform .12s,background .15s}
+.qchip:active{transform:scale(.95)}
+.qchip.placed{background:#e2e8f0;color:#94a3b8;border-color:#cbd5e1}
+.qboard-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:10px auto 14px;padding-bottom:4px}
+table.qboard{border-collapse:separate;border-spacing:0;margin:0 auto;background:#fff;
+             border:2.5px solid #1e3a8a;border-radius:10px;overflow:hidden;box-shadow:0 2px 6px rgba(30,58,138,.1)}
+table.qboard th,table.qboard td{border-right:2px solid #bfdbfe;text-align:center;min-width:60px}
+table.qboard th:last-child,table.qboard td:last-child{border-right:none}
+table.qboard th{background:#dbeafe;color:#1e3a8a;font-size:15px;padding:6px 4px;font-weight:700}
+table.qboard td{font-size:32px;font-weight:700;height:64px;color:#0f172a;cursor:pointer;
+                transition:background .12s}
+table.qboard td.empty{color:#cbd5e1;background:#f8fafc}
+table.qboard td.filled{background:#fff;color:#1e3a8a}
+table.qboard td.zero{color:#dc2626;background:#fff}
+table.qboard td.drop{background:#bbf7d0 !important}
+table.qboard td.bad{background:#fee2e2 !important}
+table.qboard .grp{border-right:4px solid #1e3a8a !important}
 @media(min-width:900px){
   h1{font-size:24px}
   td.cell{font-size:52px;height:96px}
@@ -202,6 +224,7 @@ td.cell.bad{background:#fecaca}
     <div class="q">
       <div class="qtitle" id="qTitle"></div>
       <div class="qbody" id="qBody"></div>
+      <div id="qBoardArea"></div>
       <input class="ans" id="qAns" autocomplete="off">
       <div class="ctrl">
         <button class="btn on" onclick="checkAns()">確認</button>
@@ -638,19 +661,218 @@ function goStage(s) {
 
 function curQ() { return QS[stage][qi]; }
 
+var qFilled = {};
+
+function parseBillsToParts(s) {
+  var map = { '1 億': 8, '1000 萬': 7, '100 萬': 6, '10 萬': 5, '1 萬': 4, '1000 元': 3, '100 元': 2, '10 元': 1, '1 元': 0 };
+  var items = s.split('、');
+  var res = [];
+  items.forEach(function(it) {
+    var m = it.match(/(\d+)\s*張\s*(.+)/);
+    if (m) {
+      var cnt = +m[1], u = m[2].trim();
+      var pos = map[u];
+      if (pos !== undefined) res.push({ cnt: cnt, pos: pos, lab: it.trim(), unit: u });
+    }
+  });
+  return res;
+}
+
+function parseChineseToParts(n) {
+  var s = String(n), L = s.length, res = [];
+  for (var i = 0; i < L; i++) {
+    var d = +s.charAt(i), pos = L - 1 - i;
+    if (d > 0) {
+      res.push({ cnt: d, pos: pos, lab: d + ' 個 ' + NAMES[pos] });
+    }
+  }
+  return res;
+}
+
 function renderQ() {
-  var q = curQ(), t = '', b = '';
-  if (stage === 0) { t = '下面共有多少元？寫成阿拉伯數字。'; b = q.bills; }
-  else if (stage === 1) { t = '這個數怎麼讀？（用國字寫出讀法，不必寫「讀作」）'; b = String(q.n); }
-  else { t = '用阿拉伯數字記記看。'; b = q.c; }
+  var q = curQ(), t = '', b = '', boardHtml = '';
+  qFilled = {};
+
+  if (stage === 0) {
+    // 關卡一 記數：給鈔票，先填定位板再寫數字
+    t = '先放入定位板，再寫出總共是多少元（阿拉伯數字）';
+    b = q.bills;
+    var parts = parseBillsToParts(q.bills);
+    var maxPos = 4;
+    parts.forEach(function(p){ if (p.pos > maxPos) maxPos = p.pos; });
+
+    var chipsHtml = '<div class="qchips" id="qChips">';
+    parts.forEach(function(p, idx) {
+      chipsHtml += '<div class="qchip" id="qc_' + idx + '" onclick="clickBillChip(' + idx + ')">'
+                 + p.lab + '</div>';
+    });
+    chipsHtml += '</div>';
+
+    var h = '<tr>', row = '<tr>';
+    for (var i = maxPos; i >= 0; i--) {
+      var nm = NAMES[i], main = nm.slice(0, nm.length - 1), tail = nm.slice(-1);
+      var cls = (i > 0 && i % 4 === 0) ? ' class="grp"' : '';
+      h += '<th' + cls + '>' + main + '<small>' + tail + '</small></th>';
+      row += '<td class="empty' + ((i > 0 && i % 4 === 0) ? ' grp' : '') + '" id="qtd_' + i + '" onclick="clickBillCell(' + i + ')">?</td>';
+    }
+    boardHtml = chipsHtml
+              + '<div style="font-size:15px;font-weight:700;color:#1e3a8a;text-align:center;margin:6px 0 4px">① 先放進定位板（點卡片或點格子填入）：</div>'
+              + '<div class="qboard-wrap"><table class="qboard" id="qBoard">'
+              + h + '</tr>' + row + '</tr></table></div>'
+              + '<div id="qBoardMsg" style="font-size:14px;color:#64748b;text-align:center;min-height:20px;margin-bottom:8px"></div>'
+              + '<div style="font-size:15px;font-weight:700;color:#475569;text-align:center;margin:8px 0 6px">② 寫成阿拉伯數字：</div>';
+  } else if (stage === 1) {
+    // 關卡二 讀數：在定位板上呈現數字，依四位一組規則讀出
+    t = '看定位板寫出讀法（用國字寫，不必寫「讀作」）';
+    b = String(q.n);
+    var s = String(q.n), L = s.length;
+    var maxPos = Math.max(3, L - 1);
+    var h = '<tr>', row = '<tr>';
+    for (var i = maxPos; i >= 0; i--) {
+      var nm = NAMES[i], main = nm.slice(0, nm.length - 1), tail = nm.slice(-1);
+      var cls = (i > 0 && i % 4 === 0) ? ' class="grp"' : '';
+      h += '<th' + cls + '>' + main + '<small>' + tail + '</small></th>';
+      var d = (i < L) ? s.charAt(L - 1 - i) : '0';
+      var cellCls = (d === '0') ? 'zero' : 'filled';
+      row += '<td class="' + cellCls + ((i > 0 && i % 4 === 0) ? ' grp' : '') + '">' + d + '</td>';
+    }
+    boardHtml = '<div style="font-size:15px;font-weight:700;color:#1e3a8a;text-align:center;margin:6px 0 4px">定位板觀察（每四位一組）：</div>'
+              + '<div class="qboard-wrap"><table class="qboard" id="qBoard">'
+              + h + '</tr>' + row + '</tr></table></div>'
+              + '<div style="font-size:15px;font-weight:700;color:#475569;text-align:center;margin:8px 0 6px">用國字寫出讀法：</div>';
+  } else {
+    // 關卡三 寫數：給中文讀法，先填定位板再寫阿拉伯數字
+    t = '先放入定位板，再用阿拉伯數字記記看';
+    b = q.c;
+    var parts = parseChineseToParts(q.a);
+    var s = String(q.a), L = s.length;
+    var maxPos = L - 1;
+
+    var chipsHtml = '<div class="qchips" id="qChips">';
+    parts.forEach(function(p, idx) {
+      chipsHtml += '<div class="qchip" id="qc_' + idx + '" onclick="clickWriteChip(' + idx + ')">'
+                 + p.lab + '</div>';
+    });
+    chipsHtml += '</div>';
+
+    var h = '<tr>', row = '<tr>';
+    for (var i = maxPos; i >= 0; i--) {
+      var nm = NAMES[i], main = nm.slice(0, nm.length - 1), tail = nm.slice(-1);
+      var cls = (i > 0 && i % 4 === 0) ? ' class="grp"' : '';
+      h += '<th' + cls + '>' + main + '<small>' + tail + '</small></th>';
+      row += '<td class="empty' + ((i > 0 && i % 4 === 0) ? ' grp' : '') + '" id="qtd_' + i + '" onclick="clickWriteCell(' + i + ')">?</td>';
+    }
+    boardHtml = chipsHtml
+              + '<div style="font-size:15px;font-weight:700;color:#1e3a8a;text-align:center;margin:6px 0 4px">① 先放進定位板（點卡片或點格子填入）：</div>'
+              + '<div class="qboard-wrap"><table class="qboard" id="qBoard">'
+              + h + '</tr>' + row + '</tr></table></div>'
+              + '<div id="qBoardMsg" style="font-size:14px;color:#64748b;text-align:center;min-height:20px;margin-bottom:8px"></div>'
+              + '<div style="font-size:15px;font-weight:700;color:#475569;text-align:center;margin:8px 0 6px">② 寫成阿拉伯數字：</div>';
+  }
+
   document.getElementById('qTitle').textContent = '關卡' + '一二三'.charAt(stage) + '　' + t;
   document.getElementById('qBody').textContent = b;
+  document.getElementById('qBoardArea').innerHTML = boardHtml;
   document.getElementById('qAns').value = '';
+  document.getElementById('qAns').placeholder = (stage === 1) ? '用國字寫出讀法' : '填寫或由定位板完成數字';
+
   var _fb = document.getElementById('qFb');
   if (pendingMsg) { _fb.innerHTML = pendingMsg; _fb.className = 'fb no'; pendingMsg = ''; }
   else { _fb.textContent = ''; _fb.className = 'fb'; }
   document.getElementById('qProg').textContent =
     '第 ' + (qi + 1) + ' 題，共 ' + QS[stage].length + ' 題';
+}
+
+function clickBillChip(idx) {
+  var q = curQ();
+  if (!q) return;
+  var parts = parseBillsToParts(q.bills);
+  if (parts[idx]) fillQBoardPos(parts[idx].pos, parts[idx].cnt, parts);
+}
+
+function clickBillCell(pos) {
+  var q = curQ();
+  if (!q) return;
+  var parts = parseBillsToParts(q.bills);
+  var hit = null;
+  parts.forEach(function(p){ if (p.pos === pos) hit = p.cnt; });
+  var msg = document.getElementById('qBoardMsg');
+  if (hit !== null) {
+    fillQBoardPos(pos, hit, parts);
+    if (msg) msg.innerHTML = '<span style="color:#059669">已填入 <b>' + NAMES[pos] + '：' + hit + '</b></span>';
+  } else {
+    fillQBoardPos(pos, 0, parts);
+    if (msg) msg.innerHTML = '題目沒有提到 <b>' + NAMES[pos] + '</b>，所以這一格填 <b style="color:#dc2626">0</b>！';
+  }
+}
+
+function clickWriteChip(idx) {
+  var q = curQ();
+  if (!q) return;
+  var parts = parseChineseToParts(q.a);
+  if (parts[idx]) fillQBoardPos(parts[idx].pos, parts[idx].cnt, parts);
+}
+
+function clickWriteCell(pos) {
+  var q = curQ();
+  if (!q) return;
+  var parts = parseChineseToParts(q.a);
+  var hit = null;
+  parts.forEach(function(p){ if (p.pos === pos) hit = p.cnt; });
+  var msg = document.getElementById('qBoardMsg');
+  if (hit !== null) {
+    fillQBoardPos(pos, hit, parts);
+    if (msg) msg.innerHTML = '<span style="color:#059669">已填入 <b>' + NAMES[pos] + '：' + hit + '</b></span>';
+  } else {
+    fillQBoardPos(pos, 0, parts);
+    if (msg) msg.innerHTML = '題目沒有提到 <b>' + NAMES[pos] + '</b>，所以這一格填 <b style="color:#dc2626">0</b>！';
+  }
+}
+
+function fillQBoardPos(pos, val, parts) {
+  qFilled[pos] = val;
+  var td = document.getElementById('qtd_' + pos);
+  if (td) {
+    td.textContent = val;
+    td.className = (val === 0 ? 'zero' : 'filled') + ((pos > 0 && pos % 4 === 0) ? ' grp' : '');
+    td.classList.add('drop');
+    setTimeout(function(){ if (td) td.classList.remove('drop'); }, 300);
+  }
+
+  if (parts) {
+    parts.forEach(function(p, idx) {
+      var qc = document.getElementById('qc_' + idx);
+      if (qc) {
+        if (qFilled[p.pos] !== undefined) qc.classList.add('placed');
+        else qc.classList.remove('placed');
+      }
+    });
+  }
+
+  var maxPos = 4;
+  if (parts) {
+    parts.forEach(function(p){ if (p.pos > maxPos) maxPos = p.pos; });
+  }
+  if (stage === 2) {
+    var q = curQ();
+    if (q) maxPos = String(q.a).length - 1;
+  }
+
+  var allFilled = true, ansStr = '';
+  for (var i = maxPos; i >= 0; i--) {
+    if (qFilled[i] === undefined) { allFilled = false; break; }
+    ansStr += String(qFilled[i]);
+  }
+
+  if (allFilled) {
+    var aInput = document.getElementById('qAns');
+    if (aInput) {
+      aInput.value = ansStr;
+      aInput.focus();
+    }
+    var msg = document.getElementById('qBoardMsg');
+    if (msg) msg.innerHTML = '🎉 <b style="color:#059669">定位板填寫完成！合起來是 ' + ansStr + '，請點「確認」檢查答案。</b>';
+  }
 }
 
 function norm(s) {

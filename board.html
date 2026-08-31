@@ -84,6 +84,7 @@ td.cell.bad{background:#fecaca}
   table.board th{font-size:17px;min-width:74px}
   .num{font-size:44px}.rd{font-size:32px}
   .notes{width:116px}
+  .notes-empty{width:116px;height:52px;font-size:14px}
   .note1{width:116px;height:38px;font-size:15px}
   .bundleov{width:116px}
   .bundleov .note1{width:116px;height:38px}
@@ -116,11 +117,19 @@ td.cell.bad{background:#fecaca}
       padding:8px 10px 10px;cursor:pointer;transition:all .15s ease;min-width:108px}
 .pile:hover{background:#eff6ff;border-color:#3b82f6;transform:translateY(-2px);
             box-shadow:0 4px 12px rgba(59,130,246,0.15)}
+.pile.pile-zero{background:#f8fafc;border:1.5px dashed #cbd5e1;opacity:.88}
+.pile.pile-zero:hover{background:#eff6ff;border-color:#3b82f6;opacity:1}
 .pile-pv{font-size:14px;font-weight:700;color:#1e3a8a;background:#dbeafe;
          padding:2px 8px;border-radius:6px;margin-bottom:4px;letter-spacing:0.5px}
+.pile-pv-zero{background:#f1f5f9 !important;color:#64748b !important;border:1px solid #e2e8f0}
 .pile .lab{font-size:14px;color:#334155;margin-top:5px;font-weight:600;text-align:center}
 .pile .lab .pcount{font-size:17px;color:#1d4ed8}
+.lab-zero{color:#94a3b8 !important}
+.lab-zero .pcount{color:#64748b !important}
 .notes{position:relative;height:52px;width:100px}
+.notes-empty{width:100px;height:48px;border:1.5px dashed #cbd5e1;border-radius:6px;
+             display:flex;align-items:center;justify-content:center;color:#94a3b8;
+             font-size:13px;font-weight:700;background:rgba(241,245,249,0.6);margin-top:2px}
 .note1{position:absolute;left:0;width:100px;height:34px;border-radius:6px;
        border:1.5px solid rgba(255,255,255,0.7);box-shadow:0 2px 5px rgba(0,0,0,0.18);
        font-size:14px;color:#fff;display:flex;align-items:center;justify-content:center;
@@ -389,30 +398,55 @@ function clearBoard() { digits = [0,0,0,0,0,0,0,0,0]; update(); }
    課本 p2「10 張紮成一疊」是本單元的起點，
    若只用彩色按鈕代表鈔票，學生看到的其實已經是抽象符號了。 */
 function drawStack() {
+  var maxPos = -1, minPos = 9;
+  for (var i = 0; i < range; i++) {
+    if (digits[i] > 0) {
+      if (i > maxPos) maxPos = i;
+      if (i < minPos) minPos = i;
+    }
+  }
+
+  if (maxPos === -1) {
+    document.getElementById('stack').innerHTML =
+      '<div style="color:#64748b;font-size:16px;padding:14px 0;width:100%;text-align:center">🪙 尚未放入鈔票。點選下方鈔票放進定位板，觀察鈔票與位值的對應 ✨</div>';
+    return;
+  }
+
   var html = '';
-  for (var i = range - 1; i >= 0; i--) {
+  for (var i = maxPos; i >= minPos; i--) {
     var n = digits[i];
-    if (!n) continue;
     var b = null;
     BILLS.forEach(function(x){ if (x.idx === i) b = x; });
     var lab = b ? b.lab : UNITLAB(i);
-    var color = b ? BILLCOLOR[b.cls] : '#64748b';
-    var notes = '';
-    for (var k = 0; k < n; k++) {
-      notes += '<div class="note1" id="nt' + i + '_' + k + '" style="background:' + color +
-               ';bottom:' + (k * 5) + 'px">' + lab + '</div>';
-    }
     var pvName = NAMES[i] || '';
-    html += '<div class="pile" id="pile_' + i + '" onclick="addAt(' + i + ', 1)" '
-          + 'onmouseenter="highlightCell(' + i + ', true)" onmouseleave="highlightCell(' + i + ', false)" '
-          + 'title="點一下可再加 1 張">'
-          + '<div class="pile-pv">' + pvName + '</div>'
-          + '<div class="notes" style="height:' + (36 + n * 5) + 'px">' + notes + '</div>'
-          + '<div class="lab"><b class="pcount">' + n + '</b> 張 ' + lab + '</div>'
-          + '</div>';
+
+    if (n > 0) {
+      var color = b ? BILLCOLOR[b.cls] : '#64748b';
+      var notes = '';
+      for (var k = 0; k < n; k++) {
+        notes += '<div class="note1" id="nt' + i + '_' + k + '" style="background:' + color +
+                 ';bottom:' + (k * 5) + 'px">' + lab + '</div>';
+      }
+      html += '<div class="pile" id="pile_' + i + '" onclick="addAt(' + i + ', 1)" '
+            + 'onmouseenter="highlightCell(' + i + ', true)" onmouseleave="highlightCell(' + i + ', false)" '
+            + 'title="點一下可再加 1 張">'
+            + '<div class="pile-pv">' + pvName + '</div>'
+            + '<div class="notes" style="height:' + (36 + n * 5) + 'px">' + notes + '</div>'
+            + '<div class="lab"><b class="pcount">' + n + '</b> 張 ' + lab + '</div>'
+            + '</div>';
+    } else {
+      // 中間為 0 的位（跳位）：保留空位與位名，與定位板欄位完全對齊
+      html += '<div class="pile pile-zero" id="pile_' + i + '" onclick="addAt(' + i + ', 1)" '
+            + 'onmouseenter="highlightCell(' + i + ', true)" onmouseleave="highlightCell(' + i + ', false)" '
+            + 'title="' + pvName + '目前為 0，點一下可放 1 張 ' + lab + '">'
+            + '<div class="pile-pv pile-pv-zero">' + pvName + '</div>'
+            + '<div class="notes-empty">0 張（無）</div>'
+            + '<div class="lab lab-zero"><b class="pcount">0</b> 張 ' + lab + '</div>'
+            + '</div>';
+    }
   }
-  document.getElementById('stack').innerHTML =
-    html || '<div style="color:#64748b;font-size:16px;padding:14px 0;width:100%;text-align:center">🪙 尚未放入鈔票。點選下方鈔票放進定位板，觀察鈔票與位值的對應 ✨</div>';
+
+  document.getElementById('stack').innerHTML = html;
 }
 
 function highlightCell(i, on) {

@@ -47,37 +47,23 @@ h1{font-size:20px;margin:0;flex:1}
 .ghost-chip{position:fixed;pointer-events:none;z-index:999;opacity:.92;font-size:32px;
             font-weight:700;color:#fff;background:#7c3aed;border-radius:10px;
             padding:6px 18px;box-shadow:0 8px 22px rgba(0,0,0,.3);transform:translate(-50%,-50%)}
-.exboard-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:12px auto;padding-bottom:4px}
+.exboard-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:14px auto;padding-bottom:4px}
 table.exboard{border-collapse:separate;border-spacing:0;margin:0 auto;background:#fff;
-              border:3px solid #7c3aed;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(124,58,237,.08)}
-table.exboard th,table.exboard td{border-right:2px solid #ddd6fe;text-align:center;min-width:68px}
+              border:2.5px solid #1e3a8a;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(30,58,138,.08)}
+table.exboard th,table.exboard td{border-right:1.5px solid #bfdbfe;text-align:center;min-width:68px}
 table.exboard th:last-child,table.exboard td:last-child{border-right:none}
-table.exboard th{background:#f5f3ff;color:#5b21b6;font-size:16px;padding:8px 4px;font-weight:700}
+table.exboard th{background:#e0f2fe;color:#1e3a8a;font-size:16px;padding:10px 4px;font-weight:700}
 table.exboard td{font-size:36px;font-weight:700;height:72px;color:#0f172a;cursor:pointer;
                  transition:background .15s,color .15s}
-table.exboard td.empty{color:#cbd5e1;background:#faf5ff;font-size:28px}
-table.exboard td.filled{background:#fff;color:#5b21b6}
+table.exboard td.empty{color:#cbd5e1;background:#fff;font-size:32px}
+table.exboard td.filled{background:#fff;color:#1e3a8a}
 table.exboard td.drop{background:#dcfce7 !important;color:#059669}
 table.exboard td.bad{background:#fee2e2 !important;color:#dc2626}
-table.exboard .grp{border-right:4px solid #7c3aed !important}
-table.exboard th.th-grp-wan{background:#ede9fe;color:#5b21b6;font-size:14px;padding:4px;border-bottom:2px solid #c4b5fd}
-table.exboard th.th-grp-ge{background:#e0f2fe;color:#0369a1;font-size:14px;padding:4px;border-bottom:2px solid #7dd3fc}
+table.exboard .grp{border-right:3.5px solid #1e3a8a !important}
 
-/* ── 四位一組分組視覺（萬組 ｜ 個組） ── */
-.grp-wan{color:#6d28d9;background:#f5f3ff;padding:2px 8px;border-radius:8px;border:1.5px solid #ddd6fe}
-.grp-ge{color:#0369a1;background:#f0f9ff;padding:2px 8px;border-radius:8px;border:1.5px solid #bae6fd}
-.grp-sep{color:#94a3b8;font-weight:300;margin:0 4px;font-size:36px}
-.grp-tag{font-size:18px;color:#7c3aed;margin-left:2px;font-weight:700}
-
-.chips-container{display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap;margin:12px 0 16px}
-.chip-cluster{display:flex;flex-direction:column;align-items:center;background:#faf5ff;
-              border:2px dashed #c4b5fd;border-radius:14px;padding:8px 12px 10px}
-.chip-cluster.cluster-ge{background:#f0f9ff;border-color:#7dd3fc}
-.cluster-label{font-size:14px;font-weight:700;margin-bottom:6px;padding:2px 8px;border-radius:6px}
-.chip-cluster .cluster-label{color:#6d28d9;background:#ede9fe}
-.chip-cluster.cluster-ge .cluster-label{color:#0369a1;background:#e0f2fe}
-.cluster-chips{display:flex;gap:8px;align-items:center;justify-content:center}
-.cluster-divider{font-size:32px;font-weight:700;color:#94a3b8;user-select:none;margin:0 2px}
+/* ── 數字卡片與四位分組線 ── */
+.num-chips{display:flex;gap:8px;justify-content:center;align-items:center;margin:12px 0 16px;flex-wrap:wrap}
+.chip-divider{width:3.5px;height:52px;background:#1e3a8a;border-radius:2px;margin:0 4px;align-self:center}
 
 /* ── 練習模式：合成題先放定位板 ── */
 .qchips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:10px 0 14px}
@@ -257,6 +243,7 @@ table.scb td.filled{background:#dcfce7;color:#065f46}
 
 <script>
 var UNIT = ['一','十','百','千','萬','十萬','百萬','千萬'];
+var UNIT_NAMES = ['個位','十位','百位','千位','萬位','十萬位','百萬位','千萬位','億位'];
 
 function setMode(m) {
   ['Ex','Qz','Ch'].forEach(function(k) {
@@ -310,45 +297,24 @@ function renderExplore() {
 
 function formatGroupedNumber(num) {
   var s = String(num), L = s.length;
-  if (L <= 4) {
-    return '<span class="grp-ge">' + s + '</span>';
-  }
-  var wanPart = s.slice(0, L - 4);
-  var gePart = s.slice(L - 4);
-  return '<span class="grp-wan">' + wanPart + '<small class="grp-tag"> 萬</small></span><span class="grp-sep"> </span><span class="grp-ge">' + gePart + '</span>';
+  if (L <= 4) return s;
+  return s.slice(0, L - 4) + ' ' + s.slice(L - 4);
 }
 
 function drawChips() {
-  var s = String(curN), L = s.length;
-  var wanChips = '', geChips = '';
-
+  var s = String(curN), L = s.length, html = '';
   for (var i = 0; i < L; i++) {
     var d = s.charAt(i), pos = L - 1 - i;
     var isPl = !!placed[pos];
-    var chipHtml = '<div class="dchip' + (isPl ? ' placed' : '') + '" data-pos="' + pos + '" data-d="' + d + '">'
-                 + d + '</div>';
-    if (pos >= 4) {
-      wanChips += chipHtml;
-    } else {
-      geChips += chipHtml;
+    html += '<div class="dchip' + (isPl ? ' placed' : '') + '" data-pos="' + pos + '" data-d="' + d + '">'
+          + d + '</div>';
+    // 在萬位和千位之間（即 pos === 4）畫分組間隔線
+    if (pos === 4 && i < L - 1) {
+      html += '<div class="chip-divider" title="四位分組線"></div>';
     }
   }
-
-  var html = '<div class="chips-container">';
-  if (wanChips) {
-    html += '<div class="chip-cluster">'
-          + '<div class="cluster-label">【 萬 組（萬級）】</div>'
-          + '<div class="cluster-chips">' + wanChips + '</div>'
-          + '</div>'
-          + '<div class="cluster-divider">｜</div>';
-  }
-  html += '<div class="chip-cluster cluster-ge">'
-        + '<div class="cluster-label">【 個 組（個級）】</div>'
-        + '<div class="cluster-chips">' + geChips + '</div>'
-        + '</div>'
-        + '</div>';
-
   document.getElementById('eChips').innerHTML = html;
+  document.getElementById('eChips').className = 'num-chips';
   [].forEach.call(document.querySelectorAll('.dchip'), bindChip);
 }
 
@@ -442,27 +408,18 @@ function flashCell(pos, cls) {
 
 function drawExBoard() {
   var s = String(curN), L = s.length;
-  var topHeader = '';
-  if (L > 4) {
-    var wanCount = L - 4;
-    topHeader = '<tr>'
-              + '<th colspan="' + wanCount + '" class="th-grp-wan grp">萬 級（萬組）</th>'
-              + '<th colspan="4" class="th-grp-ge">個 級（個組）</th>'
-              + '</tr>';
-  }
-
   var h = '<tr>', b = '<tr>';
   for (var i = L - 1; i >= 0; i--) {
     var isGrp = (i === 4);
     var grpCls = isGrp ? ' grp' : '';
-    h += '<th class="' + grpCls + '">' + UNIT[i] + '</th>';
+    h += '<th class="' + grpCls + '">' + UNIT_NAMES[i] + '</th>';
     var isPl = !!placed[i];
     var d = s.charAt(L - 1 - i);
     var cls = (isPl ? 'filled' : 'empty') + grpCls;
     b += '<td class="' + cls + '" id="ec_' + i + '" data-ex-pos="' + i + '" onclick="onCellClick(' + i + ')">'
        + (isPl ? d : '?') + '</td>';
   }
-  document.getElementById('exBoard').innerHTML = topHeader + h + '</tr>' + b + '</tr>';
+  document.getElementById('exBoard').innerHTML = h + '</tr>' + b + '</tr>';
 }
 
 function onCellClick(pos) {

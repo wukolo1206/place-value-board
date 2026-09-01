@@ -19,14 +19,9 @@ h1{font-size:20px;margin:0;flex:1}
 .panel{display:none}.panel.on{display:block}
 
 .card{background:#fff;border-radius:12px;padding:16px;border:2px solid #e2e8f0;margin-bottom:12px}
-.big{font-size:44px;font-weight:700;text-align:center;letter-spacing:3px;color:#0f172a;margin:8px 0}
-.big-grouped{display:flex;gap:16px;justify-content:center;align-items:flex-start;margin:10px 0 14px;flex-wrap:wrap}
-.num-card{background:#f8fafc;border:2px solid #bfdbfe;border-radius:12px;padding:6px 16px 8px;
-          display:inline-flex;flex-direction:column;align-items:center;min-width:84px;
-          box-shadow:0 2px 6px rgba(30,58,138,.06)}
-.nc-val{font-size:46px;font-weight:700;color:#0369a1;letter-spacing:4px;line-height:1.15;font-family:inherit}
-.nc-line{width:100%;height:4px;background:#e11d48;border-radius:2px;margin-top:4px}
-.nc-tag{font-size:14px;font-weight:700;color:#64748b;margin-top:3px}
+.big{font-size:46px;font-weight:700;text-align:center;letter-spacing:3px;color:#0f172a;margin:10px 0 14px}
+.ugrp{display:inline-block;padding:0 4px;border-bottom:4px solid #e11d48;line-height:1.2}
+.ugrp-space{display:inline-block;width:18px}
 .parts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0}
 .part{border-radius:10px;padding:10px 14px;font-size:19px;font-weight:700;
       border:2px solid #ddd6fe;background:#f5f3ff;color:#5b21b6;min-height:52px;
@@ -305,16 +300,11 @@ function renderExplore() {
 function formatGroupedNumber(num) {
   var s = String(num), L = s.length;
   if (L <= 4) {
-    return '<div class="big-grouped">'
-         + '<div class="num-card"><div class="nc-val">' + s + '</div><div class="nc-line"></div><div class="nc-tag">個級（個組）</div></div>'
-         + '</div>';
+    return '<span class="ugrp">' + s + '</span>';
   }
   var wanPart = s.slice(0, L - 4);
   var gePart = s.slice(L - 4);
-  return '<div class="big-grouped">'
-       + '<div class="num-card"><div class="nc-val">' + wanPart + '</div><div class="nc-line"></div><div class="nc-tag">萬級（萬組）</div></div>'
-       + '<div class="num-card"><div class="nc-val">' + gePart + '</div><div class="nc-line"></div><div class="nc-tag">個級（個組）</div></div>'
-       + '</div>';
+  return '<span class="ugrp">' + wanPart + '</span><span class="ugrp-space"></span><span class="ugrp">' + gePart + '</span>';
 }
 
 function drawChips() {

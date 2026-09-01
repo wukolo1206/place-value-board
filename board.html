@@ -100,6 +100,24 @@ table.qboard td.zero{color:#dc2626;background:#fff}
 table.qboard td.drop{background:#bbf7d0 !important}
 table.qboard td.bad{background:#fee2e2 !important}
 table.qboard .grp{border-right:4px solid #1e3a8a !important}
+
+/* ── 讀法圈圈看選項 ── */
+.read-opts{display:flex;flex-direction:column;gap:10px;max-width:520px;margin:14px auto}
+.read-opt{min-height:54px;padding:12px 18px;font-size:20px;font-weight:700;
+          border:2px solid #bfdbfe;background:#fff;color:#1e3a8a;border-radius:12px;
+          cursor:pointer;text-align:center;transition:all .12s;font-family:inherit}
+.read-opt:hover{background:#eff6ff;border-color:#3b82f6}
+.read-opt:active{transform:scale(.98)}
+.read-opt.selected{background:#dbeafe;border-color:#1d4ed8;color:#1e40af;box-shadow:0 0 0 2px #3b82f6}
+
+/* ── 數的順序（連續填空） ── */
+.seq-row{display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap;margin:14px 0}
+.seq-item{display:flex;flex-direction:column;align-items:center;gap:6px;background:#f8fafc;
+          border:1.5px solid #cbd5e1;border-radius:12px;padding:10px 14px;min-width:130px}
+.seq-lbl{font-size:15px;font-weight:700;color:#475569}
+.seq-input{width:130px;min-height:48px;font-size:22px;font-weight:700;text-align:center;
+           border:2px solid #94a3b8;border-radius:8px;font-family:inherit;color:#0f172a}
+.seq-input:focus{outline:none;border-color:#1d4ed8}
 @media(min-width:900px){
   h1{font-size:24px}
   td.cell{font-size:52px;height:96px}
@@ -220,12 +238,13 @@ table.qboard .grp{border-right:4px solid #1e3a8a !important}
       <button class="st on" id="s0" onclick="goStage(0)">一 記數</button>
       <button class="st" id="s1" onclick="goStage(1)">二 讀數</button>
       <button class="st" id="s2" onclick="goStage(2)">三 寫數</button>
+      <button class="st" id="s3" onclick="goStage(3)">四 順序</button>
     </div>
     <div class="q">
       <div class="qtitle" id="qTitle"></div>
       <div class="qbody" id="qBody"></div>
       <div id="qBoardArea"></div>
-      <input class="ans" id="qAns" autocomplete="off">
+      <div id="qInputArea"><input class="ans" id="qAns" autocomplete="off"></div>
       <div class="ctrl">
         <button class="btn on" onclick="checkAns()">確認</button>
         <button class="btn" onclick="nextQ()">下一題 →</button>
@@ -602,6 +621,7 @@ function clearHi() {
 
 /* ═════════ 練習模式 ═════════ */
 /* 題目刻意集中在含 0 的數（課本活動一②③、活動二⑤最重視之處） */
+/* ═════════ 練習模式 ═════════ */
 var QS = [
   /* 關卡一 記數：給鈔票組成，答阿拉伯數字 */
   [
@@ -610,10 +630,38 @@ var QS = [
     {bills:'4 張 100 萬、9 張 1 萬', a:'4090000'},
     {bills:'1 張 1000 萬、6 張 10 萬', a:'10600000'}
   ],
-  /* 關卡二 讀數：給數字，答中文讀法 */
+  /* 關卡二 讀數：給數字，圈選正確讀法（含課本活動一 67996 等） */
   [
-    {n:29100}, {n:30100}, {n:38005},
-    {n:48014008}, {n:47980009}, {n:46500000}, {n:48004000}
+    {
+      n: 67996,
+      opts: ['六萬七千九百六十九', '六萬七千九百九十六', '六千七百九十六'],
+      a: '六萬七千九百九十六'
+    },
+    {
+      n: 29100,
+      opts: ['二萬九千一百', '二萬九千零一百', '二千九百一十'],
+      a: '二萬九千一百'
+    },
+    {
+      n: 38005,
+      opts: ['三萬八千五', '三萬八千零五', '三萬八千零五十'],
+      a: '三萬八千零五'
+    },
+    {
+      n: 48014008,
+      opts: ['四千八百一萬四千八', '四千八百零一萬四千零八', '四千八百一十四萬零八'],
+      a: '四千八百零一萬四千零八'
+    },
+    {
+      n: 47980009,
+      opts: ['四千七百九十八萬零九', '四千七百九十八萬九', '四千七百九十八萬零九十'],
+      a: '四千七百九十八萬零九'
+    },
+    {
+      n: 46500000,
+      opts: ['四千六百五十', '四千六百五十萬', '四千六百零五萬'],
+      a: '四千六百五十萬'
+    }
   ],
   /* 關卡三 寫數：給中文，答阿拉伯數字 */
   [
@@ -622,18 +670,45 @@ var QS = [
     {c:'四千一百萬零九百', a:'41000900'},
     {c:'三萬八千零五', a:'38005'},
     {c:'二千三百四十萬', a:'23400000'}
+  ],
+  /* 關卡四 數的順序：一千一千地數、一萬一萬地數（累加跳數＋進位觀察） */
+  [
+    {
+      start: 67996,
+      step: 1000,
+      desc: '67996 加 1000 是（　），再加 1000 是（　），再加 1000 是（　）。',
+      steps: ['68996', '69996', '70996'],
+      hint: '千位滿十進位：69996 加 1000 滿十向萬位進一，變成 70996！'
+    },
+    {
+      start: 67996,
+      step: 10000,
+      desc: '67996 加 10000 是（　），再加 10000 是（　），再加 10000 是（　）。',
+      steps: ['77996', '87996', '97996'],
+      hint: '一萬一萬地數：只有萬位增加 1，其他位數保持不變。'
+    },
+    {
+      start: 39950,
+      step: 100,
+      desc: '39950 加 100 是（　），再加 100 是（　），再加 100 是（　）。',
+      steps: ['40050', '40150', '40250'],
+      hint: '百位 9 滿十進位到千位，千位 9 滿十再進位到萬位！'
+    },
+    {
+      start: 9997000,
+      step: 1000,
+      desc: '9997000 加 1000 是（　），再加 1000 是（　），再加 1000 是（　）。',
+      steps: ['9998000', '9999000', '10000000'],
+      hint: '連續進位：9999000 再加 1000 滿十進位，變成一千萬（10000000）！'
+    }
   ]
 ];
-var stage = 0, qi = 0, doneStage = [false,false,false];
+var stage = 0, qi = 0, doneStage = [false,false,false,false];
 var solved = {};            // key = stage_qi，答對才記
 var pendingMsg = '';        // 跳回未答題時要保留的提示
 var advTimer = null;        // 轉場計時器
 var qGen = 0;               // generation token：切關/切模式時遞增，使舊回呼失效
 
-
-/* 所有練習區的延遲動作都走這裡。
-   之前 setTimeout(renderQ, 700) 沒保存也沒取消，700ms 內切關就會
-   用舊關卡的狀態重繪，把新關卡的答案清掉。 */
 function schedule(fn, ms) {
   if (advTimer) { clearTimeout(advTimer); advTimer = null; }
   var gen = qGen;
@@ -652,9 +727,9 @@ function cancelPending() {
 function goStage(s) {
   cancelPending();
   stage = s; qi = 0;
-  for (var i = 0; i < 3; i++) {
-    document.getElementById('s' + i).className =
-      'st' + (i === s ? ' on' : (doneStage[i] ? ' done' : ''));
+  for (var i = 0; i < 4; i++) {
+    var el = document.getElementById('s' + i);
+    if (el) el.className = 'st' + (i === s ? ' on' : (doneStage[i] ? ' done' : ''));
   }
   renderQ();
 }
@@ -662,6 +737,7 @@ function goStage(s) {
 function curQ() { return QS[stage][qi]; }
 
 var qFilled = {};
+var seqCurVal = 0;
 
 function parseBillsToParts(s) {
   var map = { '1 億': 8, '1000 萬': 7, '100 萬': 6, '10 萬': 5, '1 萬': 4, '1000 元': 3, '100 元': 2, '10 元': 1, '1 元': 0 };
@@ -689,8 +765,25 @@ function parseChineseToParts(n) {
   return res;
 }
 
+function drawSeqBoardHtml(val) {
+  var s = String(val), L = s.length;
+  var maxPos = Math.max(4, L - 1);
+  var h = '<tr>', row = '<tr>';
+  for (var i = maxPos; i >= 0; i--) {
+    var nm = NAMES[i], main = nm.slice(0, nm.length - 1), tail = nm.slice(-1);
+    var cls = (i > 0 && i % 4 === 0) ? ' class="grp"' : '';
+    h += '<th' + cls + '>' + main + '<small>' + tail + '</small></th>';
+    var d = (i < L) ? s.charAt(L - 1 - i) : '0';
+    var cellCls = (d === '0') ? 'zero' : 'filled';
+    row += '<td class="' + cellCls + ((i > 0 && i % 4 === 0) ? ' grp' : '') + '">' + d + '</td>';
+  }
+  return '<div style="font-size:15px;font-weight:700;color:#1e3a8a;text-align:center;margin:6px 0 4px">定位板即時數值（觀察滿十進位）：</div>'
+       + '<div class="qboard-wrap"><table class="qboard" id="qBoard">'
+       + h + '</tr>' + row + '</tr></table></div>';
+}
+
 function renderQ() {
-  var q = curQ(), t = '', b = '', boardHtml = '';
+  var q = curQ(), t = '', b = '', boardHtml = '', inpHtml = '';
   qFilled = {};
 
   if (stage === 0) {
@@ -721,9 +814,10 @@ function renderQ() {
               + h + '</tr>' + row + '</tr></table></div>'
               + '<div id="qBoardMsg" style="font-size:14px;color:#64748b;text-align:center;min-height:20px;margin-bottom:8px"></div>'
               + '<div style="font-size:15px;font-weight:700;color:#475569;text-align:center;margin:8px 0 6px">② 寫成阿拉伯數字：</div>';
+    inpHtml = '<input class="ans" id="qAns" inputmode="numeric" placeholder="填寫或由定位板完成數字" autocomplete="off">';
   } else if (stage === 1) {
-    // 關卡二 讀數：在定位板上呈現數字，依四位一組規則讀出
-    t = '看定位板寫出讀法（用國字寫，不必寫「讀作」）';
+    // 關卡二 讀數：在定位板上呈現數字，圈選正確讀法
+    t = '圈圈看，' + q.n + ' 的正確讀法。';
     b = String(q.n);
     var s = String(q.n), L = s.length;
     var maxPos = Math.max(3, L - 1);
@@ -738,9 +832,15 @@ function renderQ() {
     }
     boardHtml = '<div style="font-size:15px;font-weight:700;color:#1e3a8a;text-align:center;margin:6px 0 4px">定位板觀察（每四位一組）：</div>'
               + '<div class="qboard-wrap"><table class="qboard" id="qBoard">'
-              + h + '</tr>' + row + '</tr></table></div>'
-              + '<div style="font-size:15px;font-weight:700;color:#475569;text-align:center;margin:8px 0 6px">用國字寫出讀法：</div>';
-  } else {
+              + h + '</tr>' + row + '</tr></table></div>';
+
+    var optsHtml = '<div class="read-opts">';
+    q.opts.forEach(function(opt, idx) {
+      optsHtml += '<button class="read-opt" id="ro_' + idx + '" onclick="selectReadOpt(' + idx + ')">' + opt + '</button>';
+    });
+    optsHtml += '</div>';
+    inpHtml = optsHtml + '<input class="ans" id="qAns" style="display:none" autocomplete="off">';
+  } else if (stage === 2) {
     // 關卡三 寫數：給中文讀法，先填定位板再寫阿拉伯數字
     t = '先放入定位板，再用阿拉伯數字記記看';
     b = q.c;
@@ -768,19 +868,81 @@ function renderQ() {
               + h + '</tr>' + row + '</tr></table></div>'
               + '<div id="qBoardMsg" style="font-size:14px;color:#64748b;text-align:center;min-height:20px;margin-bottom:8px"></div>'
               + '<div style="font-size:15px;font-weight:700;color:#475569;text-align:center;margin:8px 0 6px">② 寫成阿拉伯數字：</div>';
+    inpHtml = '<input class="ans" id="qAns" inputmode="numeric" placeholder="填寫或由定位板完成數字" autocomplete="off">';
+  } else {
+    // 關卡四 數的順序：累加跳數
+    t = '數的順序（一千一千地數、一萬一萬地數）';
+    b = q.desc;
+    seqCurVal = q.start;
+    boardHtml = '<div id="seqBoardHolder">' + drawSeqBoardHtml(seqCurVal) + '</div>'
+              + '<div style="display:flex;gap:10px;justify-content:center;margin:8px 0 12px">'
+              + '<button class="btn on" onclick="addSeqStep(' + q.step + ')">⚡ 幫定位板 ＋' + q.step + '（觀察進位）</button>'
+              + '<button class="btn" onclick="resetSeqStep()">↺ 重置</button>'
+              + '</div>';
+    inpHtml = '<div class="seq-row">'
+            + '<div class="seq-item"><span class="seq-lbl">加 ' + q.step + ' 是</span><input class="seq-input" id="seq_0" inputmode="numeric" placeholder="填寫" autocomplete="off"></div>'
+            + '<div class="seq-item"><span class="seq-lbl">再加 ' + q.step + ' 是</span><input class="seq-input" id="seq_1" inputmode="numeric" placeholder="填寫" autocomplete="off"></div>'
+            + '<div class="seq-item"><span class="seq-lbl">再加 ' + q.step + ' 是</span><input class="seq-input" id="seq_2" inputmode="numeric" placeholder="填寫" autocomplete="off"></div>'
+            + '</div>'
+            + '<input class="ans" id="qAns" style="display:none" autocomplete="off">';
   }
 
-  document.getElementById('qTitle').textContent = '關卡' + '一二三'.charAt(stage) + '　' + t;
+  document.getElementById('qTitle').textContent = '關卡' + '一二三四'.charAt(stage) + '　' + t;
   document.getElementById('qBody').textContent = b;
   document.getElementById('qBoardArea').innerHTML = boardHtml;
-  document.getElementById('qAns').value = '';
-  document.getElementById('qAns').placeholder = (stage === 1) ? '用國字寫出讀法' : '填寫或由定位板完成數字';
+  document.getElementById('qInputArea').innerHTML = inpHtml;
 
   var _fb = document.getElementById('qFb');
   if (pendingMsg) { _fb.innerHTML = pendingMsg; _fb.className = 'fb no'; pendingMsg = ''; }
   else { _fb.textContent = ''; _fb.className = 'fb'; }
   document.getElementById('qProg').textContent =
     '第 ' + (qi + 1) + ' 題，共 ' + QS[stage].length + ' 題';
+  
+  var a = document.getElementById('qAns');
+  if (a) a.addEventListener('keydown', function(e){ if (e.key === 'Enter') checkAns(); });
+}
+
+function selectReadOpt(idx) {
+  var q = curQ();
+  if (!q || !q.opts) return;
+  [].forEach.call(document.querySelectorAll('.read-opt'), function(btn){
+    btn.classList.remove('selected');
+  });
+  var target = document.getElementById('ro_' + idx);
+  if (target) target.classList.add('selected');
+  var val = q.opts[idx];
+  var ansEl = document.getElementById('qAns');
+  if (ansEl) ansEl.value = val;
+}
+
+function addSeqStep(step) {
+  var q = curQ();
+  if (!q || !q.steps) return;
+  seqCurVal += step;
+  var holder = document.getElementById('seqBoardHolder');
+  if (holder) {
+    holder.innerHTML = drawSeqBoardHtml(seqCurVal);
+  }
+  for (var i = 0; i < 3; i++) {
+    var el = document.getElementById('seq_' + i);
+    if (el && !el.value) {
+      el.value = String(seqCurVal);
+      el.focus();
+      break;
+    }
+  }
+}
+
+function resetSeqStep() {
+  var q = curQ();
+  if (!q) return;
+  seqCurVal = q.start;
+  var holder = document.getElementById('seqBoardHolder');
+  if (holder) holder.innerHTML = drawSeqBoardHtml(seqCurVal);
+  for (var i = 0; i < 3; i++) {
+    var el = document.getElementById('seq_' + i);
+    if (el) el.value = '';
+  }
 }
 
 function clickBillChip(idx) {
@@ -880,10 +1042,23 @@ function norm(s) {
 }
 
 function checkAns() {
-  var q = curQ(), got = norm(document.getElementById('qAns').value), want, ok;
-  if (stage === 1) { want = readText(q.n); ok = got === want; }
-  else { want = q.a; ok = got === want; }
-  var fb = document.getElementById('qFb');
+  var q = curQ(), fb = document.getElementById('qFb'), ok, want;
+  if (stage === 1) {
+    want = q.a || readText(q.n);
+    var got = norm(document.getElementById('qAns').value);
+    ok = got === want;
+  } else if (stage === 3) {
+    want = q.steps.join('、');
+    var v0 = (document.getElementById('seq_0') ? document.getElementById('seq_0').value : '').trim();
+    var v1 = (document.getElementById('seq_1') ? document.getElementById('seq_1').value : '').trim();
+    var v2 = (document.getElementById('seq_2') ? document.getElementById('seq_2').value : '').trim();
+    ok = (v0 === q.steps[0] && v1 === q.steps[1] && v2 === q.steps[2]);
+  } else {
+    var got = norm(document.getElementById('qAns').value);
+    want = q.a;
+    ok = got === want;
+  }
+
   if (ok) {
     fb.textContent = '✅ 答對了！';
     fb.className = 'fb ok';
@@ -892,7 +1067,8 @@ function checkAns() {
     fb.className = 'fb no';
     fb.innerHTML = '❌ 再想想　正確答案：<b>' + want + '</b>' +
       (stage === 1 ? '<br><span style="font-size:15px;color:#64748b">'
-        + '每四位一組：中間連續幾個 0 只讀一個零，每組後面的 0 不讀</span>' : '');
+        + '每四位一組：中間連續幾個 0 只讀一個零，每組後面的 0 不讀</span>' : '') +
+      (stage === 3 && q.hint ? '<br><span style="font-size:15px;color:#64748b">' + q.hint + '</span>' : '');
   }
 }
 
@@ -912,12 +1088,13 @@ function nextQ() {
   }
   doneStage[stage] = true;
   fb.className = 'fb ok';
-  fb.innerHTML = '🎉 關卡' + '一二三'.charAt(stage) + '完成！';
-  if (stage < 2) {
+  fb.innerHTML = '🎉 關卡' + '一二三四'.charAt(stage) + '完成！';
+  if (stage < 3) {
     var target = stage + 1;                       // 捕捉固定目標，不讀可變的 stage
     schedule(function(){ goStage(target); }, 900);
   } else {
-    document.getElementById('s2').className = 'st done';
+    var s3 = document.getElementById('s3');
+    if (s3) s3.className = 'st done';
   }
 }
 

@@ -449,7 +449,37 @@ function drawParts() {
   }
 
   document.getElementById('eParts').innerHTML =
- /* ═══ 練習 ═══ */
+    html || '<div style="color:#94a3b8;font-size:16px;padding:12px 0;text-align:center">👇 請先把上方數字拉進定位板，位值積木就會在此展開 ✨</div>';
+
+  [].forEach.call(document.querySelectorAll('.part'), function(el) {
+    el.addEventListener('click', function() {
+      var p = +el.getAttribute('data-p');
+      off[p] = !off[p];
+      drawParts();
+    });
+  });
+
+  // 重算目前顯示值
+  var v = 0;
+  for (var j = 0; j < L; j++) {
+    var dd = +s.charAt(j), pp = L - 1 - j;
+    if (dd === 0 || off[pp] || !placed[pp]) continue;
+    v += dd * Math.pow(10, pp);
+  }
+  document.getElementById('eNum').innerHTML = formatGroupedNumber(anyPlaced ? v : curN);
+
+  var anyOff = Object.keys(off).some(function(k){ return off[k]; });
+  var hintEl = document.getElementById('eHint');
+  if (anyOff) {
+    hintEl.innerHTML = '拿掉了幾塊，數字變成 <b>' + v + '</b>。<b>被拿掉的位要補 0</b>，不能整個消失！';
+  } else if (allPlaced) {
+    hintEl.innerHTML = '🎉 <b>太棒了！所有數字已放進定位板！</b><br>點一下任一塊，可以把它<b>拿掉</b>看看數字會變成多少 —— 這就是「分解」與「合成」。';
+  } else {
+    hintEl.innerHTML = '👉 請將上方數字<b>拉進</b>（或<b>點一下</b>）對應的定位板欄位，觀察每個數字的真正位值。';
+  }
+}
+
+/* ═══ 練習 ═══ */
 /* 題目全部取自課本活動一⑦～⑪與活動二⑥ */
 var QS = [
   /* 0 分解：給數，先放定位板，答各位有幾個 */

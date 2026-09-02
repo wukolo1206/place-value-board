@@ -449,51 +449,23 @@ function drawParts() {
   }
 
   document.getElementById('eParts').innerHTML =
-    html || '<div style="color:#94a3b8;font-size:16px;padding:12px 0;text-align:center">👇 請先把上方數字拉進定位板，位值積木就會在此展開 ✨</div>';
-
-  [].forEach.call(document.querySelectorAll('.part'), function(el) {
-    el.addEventListener('click', function() {
-      var p = +el.getAttribute('data-p');
-      off[p] = !off[p];
-      drawParts();
-    });
-  });
-
-  // 重算目前顯示值
-  var v = 0;
-  for (var j = 0; j < L; j++) {
-    var dd = +s.charAt(j), pp = L - 1 - j;
-    if (dd === 0 || off[pp] || !placed[pp]) continue;
-    v += dd * Math.pow(10, pp);
-  }
-  document.getElementById('eNum').innerHTML = formatGroupedNumber(anyPlaced ? v : curN);
-
-  var anyOff = Object.keys(off).some(function(k){ return off[k]; });
-  var hintEl = document.getElementById('eHint');
-  if (anyOff) {
-    hintEl.innerHTML = '拿掉了幾塊，數字變成 <b>' + v + '</b>。<b>被拿掉的位要補 0</b>，不能整個消失！';
-  } else if (allPlaced) {
-    hintEl.innerHTML = '🎉 <b>太棒了！所有數字已放進定位板！</b><br>點一下任一塊，可以把它<b>拿掉</b>看看數字會變成多少 —— 這就是「分解」與「合成」。';
-  } else {
-    hintEl.innerHTML = '👉 請將上方數字<b>拉進</b>（或<b>點一下</b>）對應的定位板欄位，觀察每個數字的真正位值。';
-  }
-}
-
-/* ═══ 練習 ═══ */
+ /* ═══ 練習 ═══ */
 /* 題目全部取自課本活動一⑦～⑪與活動二⑥ */
 var QS = [
-  /* 0 分解：給數，答各位有幾個 */
+  /* 0 分解：給數，先放定位板，答各位有幾個 */
   [
-    {n:40980, ask:[4,3,2,1,0]},
-    {n:51957, ask:[4,3,2,1,0]},
-    {n:12300, ask:[4,3,2,1,0]}
+    {n:40980, ask:[4,3,2,1,0], digits:5, digitName:'五位數', topUnit:'萬位'},
+    {n:51957, ask:[4,3,2,1,0], digits:5, digitName:'五位數', topUnit:'萬位'},
+    {n:12300, ask:[4,3,2,1,0], digits:5, digitName:'五位數', topUnit:'萬位'}
   ],
-  /* 1 位值辨識：某個數字在某位表示多少 */
+  /* 1 位值辨識與幾位數：先放定位板，辨識幾位數與特定數字表示多少 */
   [
-    {n:51957, d:5, which:'左邊那個', a:'50000'},
-    {n:51957, d:5, which:'右邊那個', a:'50'},
-    {n:27724, d:7, which:'右邊那個', a:'700'},
-    {n:2340, d:2, which:'唯一那個', a:'2000'}
+    {n:51957, d:5, which:'左邊那個', a:'50000', pos:4, digitName:'五位數', digits:5, topUnit:'萬位'},
+    {n:51957, d:5, which:'右邊那個', a:'50', pos:1, digitName:'五位數', digits:5, topUnit:'萬位'},
+    {n:27724, d:7, which:'右邊那個', a:'700', pos:2, digitName:'五位數', digits:5, topUnit:'萬位'},
+    {n:2340, d:2, which:'唯一那個', a:'2000', pos:3, digitName:'四位數', digits:4, topUnit:'千位'},
+    {n:6544970, d:6, which:'最高位那個', a:'6000000', pos:6, digitName:'七位數', digits:7, topUnit:'百萬位'},
+    {n:9490995, d:4, which:'十萬位那個', a:'400000', pos:5, digitName:'七位數', digits:7, topUnit:'百萬位'}
   ],
   /* 2 合成：照位序給 */
   [
@@ -556,17 +528,82 @@ function renderQ() {
   qFilled = {};
 
   if (stage === 0) {
-    t = '這個數可以分成幾個萬、幾個千、幾個百、幾個十和幾個一？';
+    t = '先放入定位板，再分解成幾個萬、幾個千⋯⋯';
     b = String(q.n);
-    inp = '<div class="multi">';
+    var s = String(q.n), L = s.length;
+    var maxPos = L - 1;
+
+    // 1. 數字卡片
+    var chipsHtml = '<div class="qchips" id="qChips">';
+    for (var i = 0; i < L; i++) {
+      var d = s.charAt(i), pos = L - 1 - i;
+      chipsHtml += '<div class="qchip" id="qc_' + i + '" onclick="clickStage0Chip(' + i + ',' + pos + ',\'' + d + '\')">'
+                 + d + '</div>';
+    }
+    chipsHtml += '</div>';
+
+    // 2. 定位板
+    var h = '<tr>', row = '<tr>';
+    for (var i = maxPos; i >= 0; i--) {
+      h += '<th>' + UNIT[i] + '</th>';
+      row += '<td class="empty" id="qtd_' + i + '" onclick="clickStage0Cell(' + i + ')">?</td>';
+    }
+    var boardHtml = '<div style="font-size:15px;font-weight:700;color:#059669;text-align:center;margin:6px 0 4px">① 先把數字放進定位板各個位置（點數字或點格子填入）：</div>'
+                  + '<div class="qboard-wrap"><table class="qboard" id="qBoard">'
+                  + h + '</tr>' + row + '</tr></table></div>';
+
+    var msgHtml = '<div id="qBoardMsg" style="font-size:14px;color:#64748b;text-align:center;min-height:20px;margin-bottom:8px"></div>';
+
+    var inpHtml = '<div style="font-size:15px;font-weight:700;color:#475569;text-align:center;margin:8px 0 6px">② 分解成各個位值：</div>'
+                + '<div class="multi">';
     q.ask.forEach(function(p) {
-      inp += '<span class="mi"><input id="i' + p + '" inputmode="numeric"> 個 ' + UNIT[p] + '</span>';
+      inpHtml += '<span class="mi"><input id="i' + p + '" inputmode="numeric"> 個 ' + UNIT[p] + '</span>';
     });
-    inp += '</div>';
+    inpHtml += '</div>';
+
+    inp = chipsHtml + boardHtml + msgHtml + inpHtml;
   } else if (stage === 1) {
-    t = '這個數裡的「' + q.d + '」表示多少？';
-    b = String(q.n) + '　←　' + q.which + ' ' + q.d;
-    inp = '<input class="ans" id="iA" inputmode="numeric" autocomplete="off">';
+    t = '先放入定位板，辨認幾位數與位值';
+    b = String(q.n) + '　←　問：「' + q.which + ' ' + q.d + '」表示多少？';
+
+    var s = String(q.n), L = s.length;
+    var maxPos = L - 1;
+
+    // 1. 數字卡片
+    var chipsHtml = '<div class="qchips" id="qChips">';
+    for (var i = 0; i < L; i++) {
+      var d = s.charAt(i), pos = L - 1 - i;
+      chipsHtml += '<div class="qchip" id="qc_' + i + '" onclick="clickStage1Chip(' + i + ',' + pos + ',\'' + d + '\')">'
+                 + d + '</div>';
+    }
+    chipsHtml += '</div>';
+
+    // 2. 定位板
+    var h = '<tr>', row = '<tr>';
+    for (var i = maxPos; i >= 0; i--) {
+      h += '<th>' + UNIT[i] + '</th>';
+      row += '<td class="empty" id="qtd_' + i + '" onclick="clickStage1Cell(' + i + ')">?</td>';
+    }
+    var boardHtml = '<div style="font-size:15px;font-weight:700;color:#059669;text-align:center;margin:6px 0 4px">① 先把數字放進定位板各個位置（點數字或點格子填入）：</div>'
+                  + '<div class="qboard-wrap"><table class="qboard" id="qBoard">'
+                  + h + '</tr>' + row + '</tr></table></div>';
+
+    var msgHtml = '<div id="qBoardMsg" style="font-size:14px;color:#64748b;text-align:center;min-height:20px;margin-bottom:8px"></div>';
+
+    // 3. 幾位數辨認與位值問答卡
+    var metaHtml = '<div style="background:#f8fafc;border:2px solid #bfdbfe;border-radius:12px;padding:12px 16px;margin:10px auto;max-width:540px;text-align:center">'
+                 + '<div style="font-size:17px;font-weight:700;color:#1e3a8a;margin-bottom:6px">'
+                 + '📌 <b>' + q.n + '</b> 共有 <b>' + q.digits + '</b> 個數字，是 <b style="color:#e11d48;font-size:20px">' + q.digitName + '（' + q.digits + '位數）</b>，最高位是 <b style="color:#1d4ed8;font-size:20px">' + q.topUnit + '</b>'
+                 + '</div>'
+                 + '<div style="font-size:16px;color:#334155;font-weight:700;margin-top:6px">'
+                 + '② 題目問：<b>' + q.which + ' ' + q.d + '</b> 在 ' + UNIT[q.pos] + '，表示多少？'
+                 + '</div>'
+                 + '</div>';
+
+    var ansHtml = '<div style="font-size:15px;font-weight:700;color:#475569;text-align:center;margin:8px 0 6px">③ 填寫它代表的數值（阿拉伯數字）：</div>'
+                + '<input class="ans" id="iA" inputmode="numeric" placeholder="例如：' + q.a + '" autocomplete="off">';
+
+    inp = chipsHtml + boardHtml + msgHtml + metaHtml + ansHtml;
   } else {
     // 關卡三、四、五（合成題）：先放入定位板，再寫出數字
     t = stage === 4
@@ -612,6 +649,95 @@ function renderQ() {
     '第 ' + (qi + 1) + ' 題，共 ' + QS[stage].length + ' 題';
   var a = document.getElementById('iA');
   if (a) a.addEventListener('keydown', function(e){ if (e.key === 'Enter') checkAns(); });
+}
+
+function clickStage0Chip(idx, pos, d) {
+  fillStage0Pos(pos, d);
+}
+function clickStage0Cell(pos) {
+  var q = curQ();
+  if (!q) return;
+  var s = String(q.n), L = s.length;
+  if (pos < L) {
+    var d = s.charAt(L - 1 - pos);
+    fillStage0Pos(pos, d);
+  }
+}
+function fillStage0Pos(pos, val) {
+  qFilled[pos] = val;
+  var td = document.getElementById('qtd_' + pos);
+  if (td) {
+    td.textContent = val;
+    td.className = (val === '0' || val === 0) ? 'zero' : 'filled';
+    td.classList.add('drop');
+    setTimeout(function(){ if (td) td.classList.remove('drop'); }, 300);
+  }
+  var q = curQ();
+  if (!q) return;
+  var s = String(q.n), L = s.length;
+  for (var i = 0; i < L; i++) {
+    var p = L - 1 - i;
+    var qc = document.getElementById('qc_' + i);
+    if (qc) {
+      if (qFilled[p] !== undefined) qc.classList.add('placed');
+      else qc.classList.remove('placed');
+    }
+  }
+  var inpEl = document.getElementById('i' + pos);
+  if (inpEl) inpEl.value = val;
+
+  var allFilled = true;
+  for (var i = L - 1; i >= 0; i--) {
+    if (qFilled[i] === undefined) { allFilled = false; break; }
+  }
+  var msg = document.getElementById('qBoardMsg');
+  if (allFilled && msg) {
+    msg.innerHTML = '🎉 <b style="color:#059669">定位板填寫完成！' + q.n + ' 是 ' + q.digitName + '，最高位在 ' + q.topUnit + '！請檢查下方分解。</b>';
+  }
+}
+
+function clickStage1Chip(idx, pos, d) {
+  fillStage1Pos(pos, d);
+}
+function clickStage1Cell(pos) {
+  var q = curQ();
+  if (!q) return;
+  var s = String(q.n), L = s.length;
+  if (pos < L) {
+    var d = s.charAt(L - 1 - pos);
+    fillStage1Pos(pos, d);
+  }
+}
+function fillStage1Pos(pos, val) {
+  qFilled[pos] = val;
+  var td = document.getElementById('qtd_' + pos);
+  if (td) {
+    td.textContent = val;
+    td.className = (val === '0' || val === 0) ? 'zero' : 'filled';
+    td.classList.add('drop');
+    setTimeout(function(){ if (td) td.classList.remove('drop'); }, 300);
+  }
+  var q = curQ();
+  if (!q) return;
+  var s = String(q.n), L = s.length;
+  for (var i = 0; i < L; i++) {
+    var p = L - 1 - i;
+    var qc = document.getElementById('qc_' + i);
+    if (qc) {
+      if (qFilled[p] !== undefined) qc.classList.add('placed');
+      else qc.classList.remove('placed');
+    }
+  }
+  var allFilled = true;
+  for (var i = L - 1; i >= 0; i--) {
+    if (qFilled[i] === undefined) { allFilled = false; break; }
+  }
+  var msg = document.getElementById('qBoardMsg');
+  if (allFilled && msg) {
+    msg.innerHTML = '🎉 <b style="color:#059669">定位板填寫完成！' + q.n + ' 是 ' + q.digitName + '，最高位在 ' + q.topUnit + '！請回答下方數值。</b>';
+    var inpA = document.getElementById('iA');
+    if (inpA && !inpA.value) inpA.focus();
+  }
 }
 
 function clickQChip(idx) {

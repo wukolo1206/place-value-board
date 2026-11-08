@@ -26,7 +26,7 @@ updated: 2026-08-23
 - **教師**：觸控大屏，投影全班共同操作 → **探索**模式
 - **學生**：iPad 自行練習 → **練習**模式
 
-兩模式以頂部 tab 切換（沿用 `../time-game/day24.html` 的 `setMode()` 結構）。
+兩模式以頂部 tab 切換（沿用 `../3下U08_時間_time-game/day24.html` 的 `setMode()` 結構）。
 
 ## 頁面
 
@@ -63,7 +63,7 @@ updated: 2026-08-23
 - 觸控：`touch-action` 與 pointer events；觸控目標 ≥ 48px
 - iPad：`user-scalable=no` 防雙擊縮放；`-webkit-tap-highlight-color: transparent`
 - 拖曳與點擊**兩種都支援**（大屏站遠時點擊比拖曳快）
-- 題目寫死於各頁，不外接 JSON（同 `../09_統計表-game/table1d.html` 做法）
+- 題目寫死於各頁，不外接 JSON（同 `../3下U09_統計表_stats-game/table1d.html` 做法）
 
 ## 驗收
 

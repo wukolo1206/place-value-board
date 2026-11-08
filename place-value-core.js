@@ -4,7 +4,7 @@
  * （原本邏輯內嵌在 board.html／calc.html 裡，測試只能用 node -e "...eval..."
  *   把 <script> 挖出來執行，換行一改就壞，等於沒有可重跑的測試。）
  *
- * 沿用 happy-division/division-core.js 的 UMD 包法。
+ * 沿用 3下U02_除法_happy-division/division-core.js 的 UMD 包法。
  */
 (function (root, factory) {
   var api = factory();

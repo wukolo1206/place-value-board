@@ -42,7 +42,7 @@ python run-tests.py
   （拖曳靈敏度、字級、48px 是否真的夠大）
 - 🔴 **無協助學習與實體遷移驗收尚未設計** —— 網頁過關不代表學會
 - 🟡 建 GitHub repo、開 Pages
-- 🟡 回填 `../knowledge-map/data/units.json` 的 U1 `tools` 欄位
+- 🟡 回填 `../00全年級_知識地圖_knowledge-map/data/units.json` 的 U1 `tools` 欄位
 - 🟡 `compare.html`／`calc.html` 沒有表徵重呈機制（只有 compose 有）
 - 🟡 真鷹架未實作。Codex 建議：**只值得做一個最小試辦**
   （限定 compose 的跳位補 0，且要與現況比較無協助題表現，沒增益就停止）
